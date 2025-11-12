@@ -9,7 +9,6 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "react-native-track-player": "^4.1.1",
     "@ai-sdk/react": "^2.0.89",
     "@expo/vector-icons": "^15.0.3",
     "@hono/trpc-server": "^0.4.0",
