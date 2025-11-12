@@ -14,10 +14,12 @@ import { AppVersionProvider, useAppVersionCheck } from "@/providers/AppVersionPr
 import UpdateRequiredModal from "@/components/UpdateRequiredModal";
 import "../config/i18n";
 import * as Sentry from '@sentry/react-native';
-import TrackPlayer from 'react-native-track-player';
 import { useSetupTrackPlayer } from '@/hooks/useSetupTrackPlayer';
 
-TrackPlayer.registerPlaybackService(() => require('@/services/playerNotificationService'));
+if (Platform.OS !== 'web') {
+  const TrackPlayer = require('react-native-track-player').default;
+  TrackPlayer.registerPlaybackService(() => require('@/services/playerNotificationService'));
+}
 
 // Initialize Sentry
 Sentry.init({

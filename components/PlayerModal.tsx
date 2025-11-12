@@ -16,7 +16,7 @@ import { Video, ResizeMode, AVPlaybackStatus, Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { usePlayer } from '@/providers/PlayerProvider';
-import TrackPlayer, { State, Event, Track as TrackPlayerTrack, Capability } from 'react-native-track-player';
+
 
 export type Mode = 'audio' | 'video';
 
@@ -154,6 +154,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
       if (Platform.OS === 'web') {
         await applyPlayStateWeb(next);
       } else if (trackPlayerActiveRef.current) {
+        const TrackPlayer = require('react-native-track-player').default;
         if (next) {
           await TrackPlayer.play();
         } else {
@@ -194,6 +195,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
           }
           setPosition(target);
         } else if (trackPlayerActiveRef.current) {
+          const TrackPlayer = require('react-native-track-player').default;
           await TrackPlayer.seekTo(target / 1000);
           setPosition(target);
         } else {
@@ -217,6 +219,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
         }
         
         if (Platform.OS !== 'web' && trackPlayerActiveRef.current) {
+          const TrackPlayer = require('react-native-track-player').default;
           const currentPosition = await TrackPlayer.getPosition();
           const target = Math.max(0, Math.min((duration ?? 0) / 1000, currentPosition + deltaMs / 1000));
           await TrackPlayer.seekTo(target);
@@ -269,6 +272,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
           if (video && !video.paused) video.pause();
         }
       } else if (trackPlayerActiveRef.current) {
+        const TrackPlayer = require('react-native-track-player').default;
         await TrackPlayer.pause();
         await TrackPlayer.reset();
         trackPlayerActiveRef.current = false;
@@ -502,6 +506,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
         await applyPlayStateWeb(intendedPlayingRef.current);
         setIsPlaying(intendedPlayingRef.current);
       } else if (trackPlayerActiveRef.current) {
+        const TrackPlayer = require('react-native-track-player').default;
         if (intendedPlayingRef.current) {
           await TrackPlayer.play();
           setIsPlaying(true);
@@ -556,10 +561,11 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
       
       try {
         console.log('[PlayerModal] Setting up TrackPlayer');
+        const TrackPlayer = require('react-native-track-player').default;
         
         await TrackPlayer.reset();
         
-        const track: TrackPlayerTrack = {
+        const track = {
           url: mediaUri,
           title: title || (mode === 'audio' ? 'Hipnosis' : 'Video'),
           artist: 'Mental',
@@ -585,6 +591,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
       
       try {
         console.log('[PlayerModal] Cleaning up TrackPlayer');
+        const TrackPlayer = require('react-native-track-player').default;
         await TrackPlayer.reset();
         trackPlayerActiveRef.current = false;
       } catch (error) {
@@ -594,7 +601,12 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
     
     setupTrackPlayer();
     
-    const subscription = TrackPlayer.addEventListener(Event.PlaybackState, async (event) => {
+    if (Platform.OS === 'web') return;
+    
+    const TrackPlayer = require('react-native-track-player').default;
+    const { Event, State } = require('react-native-track-player');
+    
+    const subscription = TrackPlayer.addEventListener(Event.PlaybackState, async (event: any) => {
       if (!trackPlayerActiveRef.current) return;
       
       const state = await TrackPlayer.getState();
@@ -609,7 +621,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
       }
     });
     
-    const progressSubscription = TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, async (event) => {
+    const progressSubscription = TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, async (event: any) => {
       if (!trackPlayerActiveRef.current || isSeekingRef.current || isDraggingRef.current || isClosingRef.current) return;
       
       setPosition(event.position * 1000);

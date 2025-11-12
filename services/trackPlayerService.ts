@@ -1,8 +1,4 @@
-import TrackPlayer, { 
-  Capability, 
-  RepeatMode, 
-  AppKilledPlaybackBehavior 
-} from 'react-native-track-player';
+import { Platform } from 'react-native';
 
 class TrackPlayerService {
   private static instance: TrackPlayerService;
@@ -18,12 +14,20 @@ class TrackPlayerService {
   }
 
   public async setupPlayer(): Promise<boolean> {
+    if (Platform.OS === 'web') {
+      console.log('[TrackPlayerService] Skipping on web');
+      return false;
+    }
+
     if (this.isSetup) {
       console.log('[TrackPlayerService] Already setup');
       return true;
     }
 
     try {
+      const TrackPlayer = require('react-native-track-player').default;
+      const { Capability, RepeatMode, AppKilledPlaybackBehavior } = require('react-native-track-player');
+
       await TrackPlayer.setupPlayer({
         maxCacheSize: 1024 * 10,
         autoHandleInterruptions: true,
