@@ -1,10 +1,7 @@
 import React, { createContext, useCallback, useContext, useState, useRef, useEffect } from 'react';
 import { Platform } from 'react-native';
-import TrackPlayer, { 
-  Capability, 
-  RepeatMode,
-} from 'react-native-track-player';
-import type { Track as RNTPTrack } from 'react-native-track-player';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import type { AudioPlayer } from 'expo-audio';
 
 export interface Track {
   id: string;
@@ -35,50 +32,6 @@ interface PlayerContextType {
   pauseForExternalPlayer: () => Promise<void>;
 }
 
-let isTrackPlayerInitialized = false;
-
-async function setupTrackPlayer() {
-  if (isTrackPlayerInitialized) {
-    console.log('[TrackPlayer] Already initialized');
-    return;
-  }
-
-  try {
-    await TrackPlayer.setupPlayer({
-      waitForBuffer: true,
-    });
-    
-    await TrackPlayer.updateOptions({
-      capabilities: [
-        Capability.Play,
-        Capability.Pause,
-        Capability.SkipToNext,
-        Capability.SkipToPrevious,
-        Capability.SeekTo,
-      ],
-      compactCapabilities: [
-        Capability.Play,
-        Capability.Pause,
-        Capability.SkipToNext,
-        Capability.SkipToPrevious,
-      ],
-      notificationCapabilities: [
-        Capability.Play,
-        Capability.Pause,
-        Capability.SkipToNext,
-        Capability.SkipToPrevious,
-      ],
-    });
-
-    await TrackPlayer.setRepeatMode(RepeatMode.Queue);
-    
-    isTrackPlayerInitialized = true;
-    console.log('[TrackPlayer] Service initialized');
-  } catch (error) {
-    console.log('[TrackPlayer] Error setting up:', error);
-  }
-}
-
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
 export const usePlayer = () => {
@@ -96,6 +49,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [uiOpen, setUIOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const playerRef = useRef<AudioPlayer | null>(null);
   const playlist = useRef<Track[]>([]);
   const currentIndex = useRef<number>(0);
   const loadingAbortRef = useRef<boolean>(false);
@@ -105,12 +59,20 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
-      setupTrackPlayer();
+      setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: 'duckOthers',
+        interruptionModeAndroid: 'duckOthers',
+      }).catch((e) => console.log('setAudioModeAsync error', e));
     }
 
     return () => {
-      if (Platform.OS !== 'web') {
-        TrackPlayer.reset().catch(console.log);
+      if (playerRef.current) {
+        try {
+          playerRef.current.remove();
+        } catch {}
+        playerRef.current = null;
       }
     };
   }, []);
@@ -118,27 +80,31 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const playTrack = useCallback(async (track: Track, playlistTracks?: Track[], openUI: boolean = true) => {
     loadingIdRef.current += 1;
     const currentLoadingId = loadingIdRef.current;
-    console.log(`[TrackPlayer] Starting load for track ${track.id}, loadingId: ${currentLoadingId}`);
+    console.log(`[PlayTrack] Starting load for track ${track.id}, loadingId: ${currentLoadingId}`);
 
     const loadTrack = async () => {
       try {
         setIsLoading(true);
         loadingAbortRef.current = true;
 
-        if (Platform.OS === 'web') {
-          console.log('[TrackPlayer] Web platform not supported');
-          setIsLoading(false);
-          return;
+        if (playerRef.current) {
+          try {
+            playerRef.current.pause();
+            playerRef.current.remove();
+          } catch (e) {
+            console.log('Error stopping/removing previous player:', e);
+          }
+          playerRef.current = null;
         }
 
         if (currentLoadingId !== loadingIdRef.current) {
-          console.log(`[TrackPlayer] Load aborted for track ${track.id}, newer request detected`);
+          console.log(`[PlayTrack] Load aborted for track ${track.id}, newer request detected`);
           setIsLoading(false);
           return;
         }
 
         if (!track.trackUrl) {
-          console.log('[TrackPlayer] No track URL provided');
+          console.log('No track URL provided');
           setIsLoading(false);
           return;
         }
@@ -166,37 +132,39 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         loadingAbortRef.current = false;
 
-        console.log(`[TrackPlayer] Adding track ${track.id} to queue, loadingId: ${currentLoadingId}`);
+        console.log(`[PlayTrack] Creating audio player for track ${track.id}, loadingId: ${currentLoadingId}`);
         
-        await TrackPlayer.reset();
+        const player = createAudioPlayer({ uri: track.trackUrl }, { updateInterval: 1000 });
+        player.loop = true;
 
-        const trackPlayerTrack: RNTPTrack = {
-          url: track.trackUrl,
-          title: track.title,
-          artist: track.isHypnosis ? 'Mental' : (track.subtitle || 'Aura Mental'),
-          album: track.isHypnosis ? 'Hipnosis' : 'Aura Mental',
-          artwork: track.imageUrl || undefined,
-        };
-
-        await TrackPlayer.add(trackPlayerTrack);
-        
-        console.log('[TrackPlayer] Set now playing info:', {
-          title: track.title,
-          artist: trackPlayerTrack.artist,
-          album: trackPlayerTrack.album,
-        });
+        if (Platform.OS !== 'web') {
+          try {
+            if ('setNowPlayingInfo' in player) {
+              (player as any).setNowPlayingInfo({
+                title: track.title,
+                artist: track.isHypnosis ? 'Mental' : (track.subtitle || 'Aura Mental'),
+                albumName: track.isHypnosis ? 'Hipnosis' : 'Aura Mental',
+                artwork: track.imageUrl || undefined,
+              });
+              console.log('[PlayTrack] Set now playing info for track:', track.title);
+            }
+          } catch (error) {
+            console.log('[PlayTrack] Error setting now playing info:', error);
+          }
+        }
 
         if (currentLoadingId !== loadingIdRef.current || loadingAbortRef.current) {
-          console.log(`[TrackPlayer] Track ${track.id} loading was aborted (newer request or manual abort)`);
-          await TrackPlayer.reset();
+          console.log(`[PlayTrack] Track ${track.id} loading was aborted (newer request or manual abort), removing player`);
+          player.remove();
           setIsLoading(false);
           return;
         }
 
-        console.log(`[TrackPlayer] Successfully loaded track ${track.id}, playing now`);
-        await TrackPlayer.play();
+        console.log(`[PlayTrack] Successfully loaded track ${track.id}, loadingId: ${currentLoadingId}`);
+        playerRef.current = player;
+        player.play();
       } catch (error) {
-        console.log('[TrackPlayer] Error playing track:', error);
+        console.log('Error playing track:', error);
       } finally {
         if (currentLoadingId === loadingIdRef.current) {
           setIsLoading(false);
@@ -210,71 +178,73 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const pause = useCallback(async () => {
     try {
-      if (Platform.OS !== 'web') {
-        await TrackPlayer.pause();
+      if (playerRef.current) {
+        playerRef.current.pause();
         setIsPlaying(false);
         setUserPaused(true);
-        console.log('[TrackPlayer] Paused');
       }
     } catch (error) {
-      console.log('[TrackPlayer] Error pausing:', error);
+      console.log('Error pausing:', error);
     }
   }, []);
 
   const pauseForExternalPlayer = useCallback(async () => {
     try {
-      if (Platform.OS !== 'web') {
-        await TrackPlayer.pause();
+      if (playerRef.current) {
+        playerRef.current.pause();
         setIsPlaying(false);
         setUserPaused(true);
-        console.log('[TrackPlayer] Paused for external player');
       }
     } catch (error) {
-      console.log('[TrackPlayer] Error pausing for external player:', error);
+      console.log('Error pausing for external player:', error);
     }
   }, []);
 
   const play = useCallback(async () => {
     try {
-      if (Platform.OS !== 'web') {
-        await TrackPlayer.play();
+      if (playerRef.current) {
+        playerRef.current.play();
         setIsPlaying(true);
         setUserPaused(false);
-        console.log('[TrackPlayer] Playing');
       }
     } catch (error) {
-      console.log('[TrackPlayer] Error playing:', error);
+      console.log('Error playing:', error);
     }
   }, []);
 
   const next = useCallback(async () => {
     if (isTransitioning.current) {
-      console.log('[TrackPlayer] Transition already in progress, ignoring next()');
+      console.log('Transition already in progress, ignoring next()');
       return;
     }
     
     const loadNext = async () => {
-      console.log('[TrackPlayer] next() called, playlist length:', playlist.current.length);
+      console.log('next() called, playlist length:', playlist.current.length);
       if (playlist.current.length === 0) {
-        console.log('[TrackPlayer] No playlist available');
-        return;
-      }
-
-      if (Platform.OS === 'web') {
-        console.log('[TrackPlayer] Web platform not supported');
+        console.log('No playlist available');
         return;
       }
       
       isTransitioning.current = true;
       loadingAbortRef.current = true;
       
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          playerRef.current.remove();
+        } catch (e) {
+          console.log('Error removing player during next():', e);
+        }
+        playerRef.current = null;
+      }
+      
       const newIndex = (currentIndex.current + 1) % playlist.current.length;
-      console.log('[TrackPlayer] Moving from index', currentIndex.current, 'to', newIndex);
+      console.log('Moving from index', currentIndex.current, 'to', newIndex);
       currentIndex.current = newIndex;
       const nextTrack = playlist.current[currentIndex.current];
       
       if (nextTrack) {
-        console.log('[TrackPlayer] Playing next track:', nextTrack.title);
+        console.log('Playing next track:', nextTrack.title);
         setPrevious(current);
         setChangeDirection('next');
         
@@ -282,7 +252,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         try {
           if (!nextTrack.trackUrl) {
-            console.log('[TrackPlayer] No track URL for next track');
+            console.log('No track URL for next track');
             return;
           }
 
@@ -292,37 +262,39 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           
           setCurrent(nextTrack);
 
-          await TrackPlayer.reset();
-
-          const trackPlayerTrack: RNTPTrack = {
-            url: nextTrack.trackUrl,
-            title: nextTrack.title,
-            artist: nextTrack.isHypnosis ? 'Mental' : (nextTrack.subtitle || 'Aura Mental'),
-            album: nextTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
-            artwork: nextTrack.imageUrl || undefined,
-          };
-
-          await TrackPlayer.add(trackPlayerTrack);
+          const player = createAudioPlayer({ uri: nextTrack.trackUrl }, { updateInterval: 1000 });
+          player.loop = true;
 
           if (loadingAbortRef.current) {
-            console.log('[TrackPlayer] Next track loading was aborted');
-            await TrackPlayer.reset();
+            console.log('Next track loading was aborted, removing player');
+            player.remove();
             return;
           }
 
+          playerRef.current = player;
           setIsPlaying(shouldPlay);
 
-          console.log('[TrackPlayer] Set now playing info:', {
-            title: nextTrack.title,
-            artist: trackPlayerTrack.artist,
-            album: trackPlayerTrack.album,
-          });
+          if (Platform.OS !== 'web') {
+            try {
+              if ('setNowPlayingInfo' in player) {
+                (player as any).setNowPlayingInfo({
+                  title: nextTrack.title,
+                  artist: nextTrack.isHypnosis ? 'Mental' : (nextTrack.subtitle || 'Aura Mental'),
+                  albumName: nextTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
+                  artwork: nextTrack.imageUrl || undefined,
+                });
+                console.log('[Next] Set now playing info:', nextTrack.title);
+              }
+            } catch (error) {
+              console.log('[Next] Error setting now playing info:', error);
+            }
+          }
           
           if (shouldPlay) {
-            await TrackPlayer.play();
+            player.play();
           }
         } catch (error) {
-          console.log('[TrackPlayer] Error playing next track:', error);
+          console.log('Error playing next track:', error);
         } finally {
           isTransitioning.current = false;
         }
@@ -335,32 +307,37 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const prev = useCallback(async () => {
     if (isTransitioning.current) {
-      console.log('[TrackPlayer] Transition already in progress, ignoring prev()');
+      console.log('Transition already in progress, ignoring prev()');
       return;
     }
     
     const loadPrev = async () => {
-      console.log('[TrackPlayer] prev() called, playlist length:', playlist.current.length);
+      console.log('prev() called, playlist length:', playlist.current.length);
       if (playlist.current.length === 0) {
-        console.log('[TrackPlayer] No playlist available');
-        return;
-      }
-
-      if (Platform.OS === 'web') {
-        console.log('[TrackPlayer] Web platform not supported');
+        console.log('No playlist available');
         return;
       }
       
       isTransitioning.current = true;
       loadingAbortRef.current = true;
       
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          playerRef.current.remove();
+        } catch (e) {
+          console.log('Error removing player during prev():', e);
+        }
+        playerRef.current = null;
+      }
+      
       const newIndex = (currentIndex.current - 1 + playlist.current.length) % playlist.current.length;
-      console.log('[TrackPlayer] Moving from index', currentIndex.current, 'to', newIndex);
+      console.log('Moving from index', currentIndex.current, 'to', newIndex);
       currentIndex.current = newIndex;
       const prevTrack = playlist.current[currentIndex.current];
       
       if (prevTrack) {
-        console.log('[TrackPlayer] Playing prev track:', prevTrack.title);
+        console.log('Playing prev track:', prevTrack.title);
         setPrevious(current);
         setChangeDirection('prev');
         
@@ -368,7 +345,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         try {
           if (!prevTrack.trackUrl) {
-            console.log('[TrackPlayer] No track URL for prev track');
+            console.log('No track URL for prev track');
             return;
           }
 
@@ -378,37 +355,39 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           
           setCurrent(prevTrack);
 
-          await TrackPlayer.reset();
-
-          const trackPlayerTrack: RNTPTrack = {
-            url: prevTrack.trackUrl,
-            title: prevTrack.title,
-            artist: prevTrack.isHypnosis ? 'Mental' : (prevTrack.subtitle || 'Aura Mental'),
-            album: prevTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
-            artwork: prevTrack.imageUrl || undefined,
-          };
-
-          await TrackPlayer.add(trackPlayerTrack);
+          const player = createAudioPlayer({ uri: prevTrack.trackUrl }, { updateInterval: 1000 });
+          player.loop = true;
 
           if (loadingAbortRef.current) {
-            console.log('[TrackPlayer] Prev track loading was aborted');
-            await TrackPlayer.reset();
+            console.log('Prev track loading was aborted, removing player');
+            player.remove();
             return;
           }
 
+          playerRef.current = player;
           setIsPlaying(shouldPlay);
 
-          console.log('[TrackPlayer] Set now playing info:', {
-            title: prevTrack.title,
-            artist: trackPlayerTrack.artist,
-            album: trackPlayerTrack.album,
-          });
+          if (Platform.OS !== 'web') {
+            try {
+              if ('setNowPlayingInfo' in player) {
+                (player as any).setNowPlayingInfo({
+                  title: prevTrack.title,
+                  artist: prevTrack.isHypnosis ? 'Mental' : (prevTrack.subtitle || 'Aura Mental'),
+                  albumName: prevTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
+                  artwork: prevTrack.imageUrl || undefined,
+                });
+                console.log('[Prev] Set now playing info:', prevTrack.title);
+              }
+            } catch (error) {
+              console.log('[Prev] Error setting now playing info:', error);
+            }
+          }
           
           if (shouldPlay) {
-            await TrackPlayer.play();
+            player.play();
           }
         } catch (error) {
-          console.log('[TrackPlayer] Error playing prev track:', error);
+          console.log('Error playing prev track:', error);
         } finally {
           isTransitioning.current = false;
         }
@@ -421,32 +400,37 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const shuffle = useCallback(async () => {
     if (isTransitioning.current) {
-      console.log('[TrackPlayer] Transition already in progress, ignoring shuffle()');
+      console.log('Transition already in progress, ignoring shuffle()');
       return;
     }
     
     const loadShuffle = async () => {
-      console.log('[TrackPlayer] shuffle() called, playlist length:', playlist.current.length);
+      console.log('shuffle() called, playlist length:', playlist.current.length);
       if (playlist.current.length === 0) {
-        console.log('[TrackPlayer] No playlist available');
-        return;
-      }
-
-      if (Platform.OS === 'web') {
-        console.log('[TrackPlayer] Web platform not supported');
+        console.log('No playlist available');
         return;
       }
       
       isTransitioning.current = true;
       loadingAbortRef.current = true;
       
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          playerRef.current.remove();
+        } catch (e) {
+          console.log('Error removing player during shuffle():', e);
+        }
+        playerRef.current = null;
+      }
+      
       const randomIndex = Math.floor(Math.random() * playlist.current.length);
-      console.log('[TrackPlayer] Playing random track at index:', randomIndex);
+      console.log('Playing random track at index:', randomIndex);
       currentIndex.current = randomIndex;
       const randomTrack = playlist.current[randomIndex];
       
       if (randomTrack) {
-        console.log('[TrackPlayer] Playing random track:', randomTrack.title);
+        console.log('Playing random track:', randomTrack.title);
         setPrevious(current);
         setChangeDirection('next');
         
@@ -454,7 +438,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         try {
           if (!randomTrack.trackUrl) {
-            console.log('[TrackPlayer] No track URL for random track');
+            console.log('No track URL for random track');
             return;
           }
 
@@ -464,37 +448,39 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           
           setCurrent(randomTrack);
 
-          await TrackPlayer.reset();
-
-          const trackPlayerTrack: RNTPTrack = {
-            url: randomTrack.trackUrl,
-            title: randomTrack.title,
-            artist: randomTrack.isHypnosis ? 'Mental' : (randomTrack.subtitle || 'Aura Mental'),
-            album: randomTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
-            artwork: randomTrack.imageUrl || undefined,
-          };
-
-          await TrackPlayer.add(trackPlayerTrack);
+          const player = createAudioPlayer({ uri: randomTrack.trackUrl }, { updateInterval: 1000 });
+          player.loop = true;
 
           if (loadingAbortRef.current) {
-            console.log('[TrackPlayer] Shuffle track loading was aborted');
-            await TrackPlayer.reset();
+            console.log('Shuffle track loading was aborted, removing player');
+            player.remove();
             return;
           }
 
+          playerRef.current = player;
           setIsPlaying(shouldPlay);
 
-          console.log('[TrackPlayer] Set now playing info:', {
-            title: randomTrack.title,
-            artist: trackPlayerTrack.artist,
-            album: trackPlayerTrack.album,
-          });
+          if (Platform.OS !== 'web') {
+            try {
+              if ('setNowPlayingInfo' in player) {
+                (player as any).setNowPlayingInfo({
+                  title: randomTrack.title,
+                  artist: randomTrack.isHypnosis ? 'Mental' : (randomTrack.subtitle || 'Aura Mental'),
+                  albumName: randomTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
+                  artwork: randomTrack.imageUrl || undefined,
+                });
+                console.log('[Shuffle] Set now playing info:', randomTrack.title);
+              }
+            } catch (error) {
+              console.log('[Shuffle] Error setting now playing info:', error);
+            }
+          }
           
           if (shouldPlay) {
-            await TrackPlayer.play();
+            player.play();
           }
         } catch (error) {
-          console.log('[TrackPlayer] Error playing random track:', error);
+          console.log('Error playing random track:', error);
         } finally {
           isTransitioning.current = false;
         }
