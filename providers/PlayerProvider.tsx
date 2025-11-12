@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useState, useRef, useEffect } from 'react';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
 
 export interface Track {
@@ -11,7 +11,6 @@ export interface Track {
   vinillo?: string;
   color?: string;
   isHypnosis?: boolean;
-  albumTitle?: string;
 }
 
 interface PlayerContextType {
@@ -56,35 +55,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadingPromiseRef = useRef<Promise<void> | null>(null);
   const isTransitioning = useRef<boolean>(false);
   const loadingIdRef = useRef<number>(0);
-  const nowPlayingUpdateInterval = useRef<NodeJS.Timeout | null>(null);
-
-  const updateNowPlaying = useCallback(async (track: Track, sound: Audio.Sound, isPlaying: boolean) => {
-    if (Platform.OS === 'web') return;
-    
-    try {
-      const nowPlayingInfo: any = {
-        title: track.title,
-        artist: track.isHypnosis ? 'Mental' : (track.albumTitle || track.subtitle || 'Aura'),
-      };
-
-      if (track.imageUrl) {
-        nowPlayingInfo.artwork = track.imageUrl;
-      }
-
-      const status = await sound.getStatusAsync();
-      if ('isLoaded' in status && status.isLoaded) {
-        nowPlayingInfo.duration = status.durationMillis ? status.durationMillis / 1000 : undefined;
-        nowPlayingInfo.currentTime = status.positionMillis ? status.positionMillis / 1000 : 0;
-      }
-
-      nowPlayingInfo.isPlaying = isPlaying;
-
-      await sound.setNowPlayingAsync(nowPlayingInfo);
-      console.log('[PlayerProvider] Updated now playing:', nowPlayingInfo);
-    } catch (error) {
-      console.log('[PlayerProvider] Error updating now playing:', error);
-    }
-  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -100,9 +70,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     return () => {
-      if (nowPlayingUpdateInterval.current) {
-        clearInterval(nowPlayingUpdateInterval.current);
-      }
       if (soundRef.current) {
         soundRef.current.unloadAsync().catch(() => {});
       }
@@ -168,19 +135,33 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         loadingAbortRef.current = false;
 
         console.log(`[PlayTrack] Creating audio for track ${track.id}, loadingId: ${currentLoadingId}`);
-        const onStatusUpdate = (status: AVPlaybackStatus) => {
-          if ('isLoaded' in status && status.isLoaded && currentLoadingId === loadingIdRef.current) {
-            setIsPlaying(status.isPlaying);
-          }
-        };
-
         const { sound } = await Audio.Sound.createAsync(
           { uri: track.trackUrl },
           { shouldPlay: true, isLooping: true },
-          onStatusUpdate
+          (status) => {
+            if (status.isLoaded && currentLoadingId === loadingIdRef.current) {
+              setIsPlaying(status.isPlaying);
+            }
+          }
         );
 
-        await updateNowPlaying(track, sound, true);
+        if (Platform.OS !== 'web') {
+          try {
+            const nowPlayingInfo: any = {
+              title: track.title,
+              artist: track.isHypnosis ? 'Mental' : (track.subtitle || ''),
+            };
+
+            if (track.imageUrl) {
+              nowPlayingInfo.artwork = track.imageUrl;
+            }
+
+            await sound.setNowPlayingAsync(nowPlayingInfo);
+            console.log('[PlayTrack] Set now playing info:', nowPlayingInfo);
+          } catch (error) {
+            console.log('[PlayTrack] Error setting now playing info:', error);
+          }
+        }
 
         if (currentLoadingId !== loadingIdRef.current || loadingAbortRef.current) {
           console.log(`[PlayTrack] Track ${track.id} loading was aborted (newer request or manual abort), unloading sound`);
@@ -192,15 +173,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.log(`[PlayTrack] Successfully loaded track ${track.id}, loadingId: ${currentLoadingId}`);
         soundRef.current = sound;
         await sound.playAsync();
-
-        if (nowPlayingUpdateInterval.current) {
-          clearInterval(nowPlayingUpdateInterval.current);
-        }
-        nowPlayingUpdateInterval.current = setInterval(() => {
-          if (soundRef.current && current) {
-            updateNowPlaying(current, soundRef.current, isPlaying).catch(() => {});
-          }
-        }, 5000);
       } catch (error) {
         console.log('Error playing track:', error);
       } finally {
@@ -216,42 +188,39 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const pause = useCallback(async () => {
     try {
-      if (soundRef.current && current) {
+      if (soundRef.current) {
         await soundRef.current.pauseAsync();
-        await updateNowPlaying(current, soundRef.current, false);
         setIsPlaying(false);
         setUserPaused(true);
       }
     } catch (error) {
       console.log('Error pausing:', error);
     }
-  }, [current, updateNowPlaying]);
+  }, []);
 
   const pauseForExternalPlayer = useCallback(async () => {
     try {
-      if (soundRef.current && current) {
+      if (soundRef.current) {
         await soundRef.current.pauseAsync();
-        await updateNowPlaying(current, soundRef.current, false);
         setIsPlaying(false);
         setUserPaused(true);
       }
     } catch (error) {
       console.log('Error pausing for external player:', error);
     }
-  }, [current, updateNowPlaying]);
+  }, []);
 
   const play = useCallback(async () => {
     try {
-      if (soundRef.current && current) {
+      if (soundRef.current) {
         await soundRef.current.playAsync();
-        await updateNowPlaying(current, soundRef.current, true);
         setIsPlaying(true);
         setUserPaused(false);
       }
     } catch (error) {
       console.log('Error playing:', error);
     }
-  }, [current, updateNowPlaying]);
+  }, []);
 
   const next = useCallback(async () => {
     if (isTransitioning.current) {
@@ -317,7 +286,23 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           soundRef.current = sound;
           setIsPlaying(shouldPlay);
 
-          await updateNowPlaying(nextTrack, sound, shouldPlay);
+          if (Platform.OS !== 'web') {
+            try {
+              const nowPlayingInfo: any = {
+                title: nextTrack.title,
+                artist: nextTrack.isHypnosis ? 'Mental' : (nextTrack.subtitle || ''),
+              };
+
+              if (nextTrack.imageUrl) {
+                nowPlayingInfo.artwork = nextTrack.imageUrl;
+              }
+
+              await sound.setNowPlayingAsync(nowPlayingInfo);
+              console.log('[Next] Set now playing info:', nowPlayingInfo);
+            } catch (error) {
+              console.log('[Next] Error setting now playing info:', error);
+            }
+          }
           
           if (shouldPlay) {
             await sound.playAsync();
@@ -398,7 +383,23 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           soundRef.current = sound;
           setIsPlaying(shouldPlay);
 
-          await updateNowPlaying(prevTrack, sound, shouldPlay);
+          if (Platform.OS !== 'web') {
+            try {
+              const nowPlayingInfo: any = {
+                title: prevTrack.title,
+                artist: prevTrack.isHypnosis ? 'Mental' : (prevTrack.subtitle || ''),
+              };
+
+              if (prevTrack.imageUrl) {
+                nowPlayingInfo.artwork = prevTrack.imageUrl;
+              }
+
+              await sound.setNowPlayingAsync(nowPlayingInfo);
+              console.log('[Prev] Set now playing info:', nowPlayingInfo);
+            } catch (error) {
+              console.log('[Prev] Error setting now playing info:', error);
+            }
+          }
           
           if (shouldPlay) {
             await sound.playAsync();
@@ -479,7 +480,23 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           soundRef.current = sound;
           setIsPlaying(shouldPlay);
 
-          await updateNowPlaying(randomTrack, sound, shouldPlay);
+          if (Platform.OS !== 'web') {
+            try {
+              const nowPlayingInfo: any = {
+                title: randomTrack.title,
+                artist: randomTrack.isHypnosis ? 'Mental' : (randomTrack.subtitle || ''),
+              };
+
+              if (randomTrack.imageUrl) {
+                nowPlayingInfo.artwork = randomTrack.imageUrl;
+              }
+
+              await sound.setNowPlayingAsync(nowPlayingInfo);
+              console.log('[Shuffle] Set now playing info:', nowPlayingInfo);
+            } catch (error) {
+              console.log('[Shuffle] Error setting now playing info:', error);
+            }
+          }
           
           if (shouldPlay) {
             await sound.playAsync();

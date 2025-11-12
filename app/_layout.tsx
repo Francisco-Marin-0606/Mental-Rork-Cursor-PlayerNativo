@@ -14,12 +14,6 @@ import { AppVersionProvider, useAppVersionCheck } from "@/providers/AppVersionPr
 import UpdateRequiredModal from "@/components/UpdateRequiredModal";
 import "../config/i18n";
 import * as Sentry from '@sentry/react-native';
-import { useSetupTrackPlayer } from '@/hooks/useSetupTrackPlayer';
-
-if (Platform.OS !== 'web') {
-  const TrackPlayer = require('react-native-track-player').default;
-  TrackPlayer.registerPlaybackService(() => require('@/services/playerNotificationService'));
-}
 
 // Initialize Sentry
 Sentry.init({
@@ -44,8 +38,6 @@ if (Platform.OS !== 'web') {
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  useSetupTrackPlayer();
-
   return (
     <Stack screenOptions={{ headerBackTitle: "Back", contentStyle: { backgroundColor: 'transparent' } }}>
       <Stack.Screen name="login" options={{ headerShown: false, statusBarTranslucent: true, statusBarBackgroundColor: 'transparent', animation: 'fade' }} />

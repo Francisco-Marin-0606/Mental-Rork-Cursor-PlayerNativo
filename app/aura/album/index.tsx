@@ -623,7 +623,6 @@ export default function AlbumScreen() {
                           imageUrl: album.imageUrl,
                           vinillo: album.vinillo,
                           color: album.colorBackground,
-                          albumTitle: album.title,
                         }, tracksForPlaylist, false);
                       }
                     }
@@ -649,7 +648,6 @@ export default function AlbumScreen() {
                         imageUrl: album.imageUrl,
                         vinillo: album.vinillo,
                         color: album.colorBackground,
-                        albumTitle: album.title,
                       }));
                       
                       if (tracksForPlaylist.length > 0) {
@@ -710,7 +708,6 @@ export default function AlbumScreen() {
                       imageUrl: album.imageUrl,
                       vinillo: album.vinillo,
                       color: album.colorBackground,
-                      albumTitle: album.title,
                     }));
                     
                     await playTrack({
@@ -721,7 +718,6 @@ export default function AlbumScreen() {
                       imageUrl: album.imageUrl,
                       vinillo: album.vinillo,
                       color: album.colorBackground,
-                      albumTitle: album.title,
                     }, tracksForPlaylist, false);
                   }
                 }}

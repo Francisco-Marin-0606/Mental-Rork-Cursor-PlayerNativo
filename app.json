@@ -66,12 +66,6 @@
           "organization": "mental-magnet",
           "project": "rork-mental-app"
         }
-      ],
-      [
-        "react-native-track-player",
-        {
-          "enableBackgroundSupport": true
-        }
       ]
     ],
     "experiments": {

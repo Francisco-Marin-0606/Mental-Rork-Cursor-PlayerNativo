@@ -17,7 +17,6 @@ import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { usePlayer } from '@/providers/PlayerProvider';
 
-
 export type Mode = 'audio' | 'video';
 
 interface PlayerModalProps {
@@ -143,6 +142,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
 
   const togglePlayPause = useCallback(async () => {
     try {
+      // Add haptic feedback
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       }
@@ -153,14 +153,8 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
 
       if (Platform.OS === 'web') {
         await applyPlayStateWeb(next);
-      } else if (trackPlayerActiveRef.current) {
-        const TrackPlayer = require('react-native-track-player').default;
-        if (next) {
-          await TrackPlayer.play();
-        } else {
-          await TrackPlayer.pause();
-        }
       } else {
+        // Control del audio/video principal
         if (videoRef.current) {
           const status = await videoRef.current.getStatusAsync();
           if ('isLoaded' in status && status.isLoaded) {
@@ -168,6 +162,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
             else await videoRef.current.pauseAsync();
           }
         }
+        // Control del video de fondo en modo audio
         if (mode === 'audio' && backgroundVideoRef.current) {
           const bgStatus = await backgroundVideoRef.current.getStatusAsync();
           if ('isLoaded' in bgStatus && bgStatus.isLoaded) {
@@ -177,7 +172,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
         }
       }
     } catch (err) {
-      console.log('[PlayerModal] togglePlayPause error:', err);
+      // Silently handle error in production
     }
   }, [applyPlayStateWeb, mode]);
 
@@ -194,10 +189,6 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
             if (el) el.currentTime = target / 1000;
           }
           setPosition(target);
-        } else if (trackPlayerActiveRef.current) {
-          const TrackPlayer = require('react-native-track-player').default;
-          await TrackPlayer.seekTo(target / 1000);
-          setPosition(target);
         } else {
           if (videoRef.current) {
             await videoRef.current.setPositionAsync(target);
@@ -205,7 +196,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
           setPosition(target);
         }
       } catch (err) {
-        console.log('[PlayerModal] seekTo error:', err);
+        console.log('seekTo error:', err);
       }
     },
     [duration, mode]
@@ -214,21 +205,15 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
   const skipBy = useCallback(
     async (deltaMs: number) => {
       try {
+        // Add haptic feedback
         if (Platform.OS !== 'web') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
         }
         
-        if (Platform.OS !== 'web' && trackPlayerActiveRef.current) {
-          const TrackPlayer = require('react-native-track-player').default;
-          const currentPosition = await TrackPlayer.getPosition();
-          const target = Math.max(0, Math.min((duration ?? 0) / 1000, currentPosition + deltaMs / 1000));
-          await TrackPlayer.seekTo(target);
-        } else {
-          const target = Math.max(0, Math.min(duration ?? 0, (position ?? 0) + deltaMs));
-          await seekTo(target);
-        }
+        const target = Math.max(0, Math.min(duration ?? 0, (position ?? 0) + deltaMs));
+        await seekTo(target);
       } catch (err) {
-        console.log('[PlayerModal] skipBy error:', err);
+        // Silently handle error in production
       }
     },
     [duration, position, seekTo]
@@ -246,14 +231,15 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
   );
 
   const closeModal = useCallback(async (skipHaptic: boolean = false) => {
-    if (isClosingRef.current) return;
+    if (isClosingRef.current) return; // Prevenir múltiples llamadas
     isClosingRef.current = true;
     
+    // Add haptic feedback only if not auto-closing
     if (!skipHaptic && Platform.OS !== 'web') {
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch (error) {
-        console.log('[PlayerModal] Haptic feedback error:', error);
+        console.log('Haptic feedback error:', error);
       }
     }
     
@@ -261,6 +247,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
       intendedPlayingRef.current = false;
       setIsPlaying(false);
       
+      // Pausar medios de forma más robusta
       if (Platform.OS === 'web') {
         if (mode === 'audio') {
           const audio = webAudioRef.current;
@@ -271,23 +258,19 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
           const video = webVideoRef.current;
           if (video && !video.paused) video.pause();
         }
-      } else if (trackPlayerActiveRef.current) {
-        const TrackPlayer = require('react-native-track-player').default;
-        await TrackPlayer.pause();
-        await TrackPlayer.reset();
-        trackPlayerActiveRef.current = false;
       } else {
+        // Para native, pausar de forma asíncrona sin bloquear
         Promise.all([
           videoRef.current?.pauseAsync().catch(() => {}),
           backgroundVideoRef.current?.pauseAsync().catch(() => {})
         ]).catch(() => {});
       }
     } catch (error) {
-      console.log('[PlayerModal] Error pausing media:', error);
+      console.log('Error pausing media:', error);
     }
     
     closeAnimated(() => {
-      isClosingRef.current = false;
+      isClosingRef.current = false; // Reset flag después del cierre
       onClose();
     });
   }, [closeAnimated, onClose, mode]);
@@ -505,12 +488,6 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
       if (Platform.OS === 'web') {
         await applyPlayStateWeb(intendedPlayingRef.current);
         setIsPlaying(intendedPlayingRef.current);
-      } else if (trackPlayerActiveRef.current) {
-        const TrackPlayer = require('react-native-track-player').default;
-        if (intendedPlayingRef.current) {
-          await TrackPlayer.play();
-          setIsPlaying(true);
-        }
       } else {
         if (intendedPlayingRef.current) {
           try {
@@ -550,90 +527,32 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
     }).catch((e) => console.log('Audio.setAudioModeAsync error', e));
   }, []);
 
-  const trackPlayerActiveRef = useRef<boolean>(false);
   const hypnosisImageUrl = useRef<string>('https://mental-app-images.nyc3.cdn.digitaloceanspaces.com/Mental%20Logo%20Azul.jpg');
 
   useEffect(() => {
-    if (!visible) return;
-    
-    const setupTrackPlayer = async () => {
-      if (Platform.OS === 'web') return;
-      
+    if (!visible || Platform.OS === 'web' || mode !== 'audio') return;
+
+    const setupNowPlaying = async () => {
       try {
-        console.log('[PlayerModal] Setting up TrackPlayer');
-        const TrackPlayer = require('react-native-track-player').default;
-        
-        await TrackPlayer.reset();
-        
-        const track = {
-          url: mediaUri,
-          title: title || (mode === 'audio' ? 'Hipnosis' : 'Video'),
-          artist: 'Mental',
-          album: mode === 'audio' ? 'Hipnosis' : 'Video',
-          artwork: hypnosisImageUrl.current,
-        };
-        
-        await TrackPlayer.add(track);
-        
-        if (intendedPlayingRef.current) {
-          await TrackPlayer.play();
+        if (videoRef.current) {
+          const nowPlayingInfo: any = {
+            title: title || 'Hipnosis',
+            artist: 'Mental',
+          };
+
+          nowPlayingInfo.artwork = hypnosisImageUrl.current;
+
+          await videoRef.current.setNowPlayingAsync(nowPlayingInfo);
+          console.log('[PlayerModal] Set now playing info for hypnosis:', nowPlayingInfo);
         }
-        
-        trackPlayerActiveRef.current = true;
-        console.log('[PlayerModal] TrackPlayer setup complete');
       } catch (error) {
-        console.log('[PlayerModal] Error setting up TrackPlayer:', error);
+        console.log('[PlayerModal] Error setting now playing info:', error);
       }
     };
-    
-    const cleanupTrackPlayer = async () => {
-      if (Platform.OS === 'web' || !trackPlayerActiveRef.current) return;
-      
-      try {
-        console.log('[PlayerModal] Cleaning up TrackPlayer');
-        const TrackPlayer = require('react-native-track-player').default;
-        await TrackPlayer.reset();
-        trackPlayerActiveRef.current = false;
-      } catch (error) {
-        console.log('[PlayerModal] Error cleaning up TrackPlayer:', error);
-      }
-    };
-    
-    setupTrackPlayer();
-    
-    if (Platform.OS === 'web') return;
-    
-    const TrackPlayer = require('react-native-track-player').default;
-    const { Event, State } = require('react-native-track-player');
-    
-    const subscription = TrackPlayer.addEventListener(Event.PlaybackState, async (event: any) => {
-      if (!trackPlayerActiveRef.current) return;
-      
-      const state = await TrackPlayer.getState();
-      console.log('[PlayerModal] TrackPlayer state:', state);
-      
-      if (state === State.Playing) {
-        setIsPlaying(true);
-        intendedPlayingRef.current = true;
-      } else if (state === State.Paused) {
-        setIsPlaying(false);
-        intendedPlayingRef.current = false;
-      }
-    });
-    
-    const progressSubscription = TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, async (event: any) => {
-      if (!trackPlayerActiveRef.current || isSeekingRef.current || isDraggingRef.current || isClosingRef.current) return;
-      
-      setPosition(event.position * 1000);
-      setDuration(event.duration * 1000);
-    });
-    
-    return () => {
-      subscription.remove();
-      progressSubscription.remove();
-      cleanupTrackPlayer();
-    };
-  }, [visible, title, mode, mediaUri]);
+
+    const timer = setTimeout(setupNowPlaying, 1000);
+    return () => clearTimeout(timer);
+  }, [visible, title, mode]);
 
   useEffect(() => {
     if (!visible) {
@@ -655,23 +574,25 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
     }
   }, [visible, screenHeight, translateY, opacity, pauseForExternalPlayer]);
 
+  // ====== Listener de status (native) con throttle vía rAF ======
   const handlePlaybackStatus = useCallback((s: AVPlaybackStatus) => {
     if (!('isLoaded' in s) || !s.isLoaded) return;
-    if (trackPlayerActiveRef.current) return;
     
+    // Check if audio has finished - do this BEFORE other checks
     if (s.didJustFinish && !isClosingRef.current) {
-      console.log('[PlayerModal] Audio finished, closing modal');
-      closeModal(true);
+      console.log('Audio finished, closing modal with animation');
+      closeModal(true); // Skip haptic for auto-close
       return;
     }
     
-    if (isSeekingRef.current) return;
-    if (isDraggingRef.current) return;
-    if (isClosingRef.current) return;
+    if (isSeekingRef.current) return; // Don't update position while seeking
+    if (isDraggingRef.current) return; // Don't update position while dragging modal
+    if (isClosingRef.current) return; // Don't update position while closing
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
       setPosition(s.positionMillis ?? 0);
       setDuration(s.durationMillis ?? 0);
+      // IMPORTANTE: NO actualizamos isPlaying desde el status para evitar loops.
     });
   }, [closeModal]);
 
