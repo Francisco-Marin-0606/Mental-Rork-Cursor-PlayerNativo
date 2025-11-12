@@ -77,36 +77,10 @@
           "organization": "mental-magnet",
           "project": "rork-mental-app"
         }
-      ],
-      [
-  			"onesignal-expo-plugin",
- 				 {
-  			  "mode": "development"
-  			}
-			]
+      ]
     ],
     "experiments": {
-  "typedRoutes": true
-},
-"extra": {
-  "oneSignalAppId": "35bff50e-438f-422d-89c7-25f966dbe812",
-  "eas": {
-    "build": {
-      "experimental": {
-        "ios": {
-          "appExtensions": [
-            {
-              "targetName": "OneSignalNotificationServiceExtension",
-              "bundleIdentifier": "com.mentalmagnet.mentalMagnetAppios.OneSignalNotificationServiceExtension",
-              "entitlements": {
-                "com.apple.security.application-groups": [
-                  "group.com.mentalmagnet.mentalMagnetAppios.onesignal"
-                ]
-              }
-            }
-          ]
-        }
-      }
+      "typedRoutes": true
     }
   }
 }
