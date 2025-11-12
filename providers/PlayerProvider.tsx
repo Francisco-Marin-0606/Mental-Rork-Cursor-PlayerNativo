@@ -141,19 +141,43 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           (status) => {
             if (status.isLoaded && currentLoadingId === loadingIdRef.current) {
               setIsPlaying(status.isPlaying);
+              
+              if (Platform.OS !== 'web') {
+                const updateNowPlaying = async () => {
+                  try {
+                    const nowPlayingUpdate: any = {
+                      position: (status.positionMillis || 0) / 1000,
+                    };
+                    if (status.durationMillis) {
+                      nowPlayingUpdate.duration = status.durationMillis / 1000;
+                    }
+                    await sound.setNowPlayingAsync(nowPlayingUpdate);
+                  } catch {
+                  }
+                };
+                updateNowPlaying();
+              }
             }
           }
         );
 
         if (Platform.OS !== 'web') {
           try {
+            const status = await sound.getStatusAsync();
             const nowPlayingInfo: any = {
               title: track.title,
               artist: track.isHypnosis ? 'Mental' : (track.subtitle || ''),
+              albumName: track.isHypnosis ? 'Hipnosis' : 'Aura Mental',
             };
 
             if (track.imageUrl) {
               nowPlayingInfo.artwork = track.imageUrl;
+            }
+
+            if ('isLoaded' in status && status.isLoaded && status.durationMillis) {
+              nowPlayingInfo.duration = status.durationMillis / 1000;
+              nowPlayingInfo.position = (status.positionMillis || 0) / 1000;
+              nowPlayingInfo.isLiveStream = false;
             }
 
             await sound.setNowPlayingAsync(nowPlayingInfo);
@@ -288,13 +312,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
           if (Platform.OS !== 'web') {
             try {
+              const status = await sound.getStatusAsync();
               const nowPlayingInfo: any = {
                 title: nextTrack.title,
                 artist: nextTrack.isHypnosis ? 'Mental' : (nextTrack.subtitle || ''),
+                albumName: nextTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
               };
 
               if (nextTrack.imageUrl) {
                 nowPlayingInfo.artwork = nextTrack.imageUrl;
+              }
+
+              if ('isLoaded' in status && status.isLoaded && status.durationMillis) {
+                nowPlayingInfo.duration = status.durationMillis / 1000;
+                nowPlayingInfo.position = (status.positionMillis || 0) / 1000;
+                nowPlayingInfo.isLiveStream = false;
               }
 
               await sound.setNowPlayingAsync(nowPlayingInfo);
@@ -385,13 +417,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
           if (Platform.OS !== 'web') {
             try {
+              const status = await sound.getStatusAsync();
               const nowPlayingInfo: any = {
                 title: prevTrack.title,
                 artist: prevTrack.isHypnosis ? 'Mental' : (prevTrack.subtitle || ''),
+                albumName: prevTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
               };
 
               if (prevTrack.imageUrl) {
                 nowPlayingInfo.artwork = prevTrack.imageUrl;
+              }
+
+              if ('isLoaded' in status && status.isLoaded && status.durationMillis) {
+                nowPlayingInfo.duration = status.durationMillis / 1000;
+                nowPlayingInfo.position = (status.positionMillis || 0) / 1000;
+                nowPlayingInfo.isLiveStream = false;
               }
 
               await sound.setNowPlayingAsync(nowPlayingInfo);
@@ -482,13 +522,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
           if (Platform.OS !== 'web') {
             try {
+              const status = await sound.getStatusAsync();
               const nowPlayingInfo: any = {
                 title: randomTrack.title,
                 artist: randomTrack.isHypnosis ? 'Mental' : (randomTrack.subtitle || ''),
+                albumName: randomTrack.isHypnosis ? 'Hipnosis' : 'Aura Mental',
               };
 
               if (randomTrack.imageUrl) {
                 nowPlayingInfo.artwork = randomTrack.imageUrl;
+              }
+
+              if ('isLoaded' in status && status.isLoaded && status.durationMillis) {
+                nowPlayingInfo.duration = status.durationMillis / 1000;
+                nowPlayingInfo.position = (status.positionMillis || 0) / 1000;
+                nowPlayingInfo.isLiveStream = false;
               }
 
               await sound.setNowPlayingAsync(nowPlayingInfo);

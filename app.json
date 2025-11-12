@@ -17,10 +17,23 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.mentalmagnet.mentalMagnetAppios",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"],
+        "UIBackgroundModes": [
+          "audio"
+        ],
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
       },
-      "requireFullScreen": true
+      "requireFullScreen": true,
+      "entitlements": {
+        "com": {
+          "apple": {
+            "developer": {
+              "networking": {
+                "wifi-info": true
+              }
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
