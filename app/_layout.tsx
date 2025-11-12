@@ -1,19 +1,20 @@
 // Main layout configuration
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import * as SystemUI from "expo-system-ui";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, Linking } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { UserSessionProvider } from "@/providers/UserSession";
+import { UserSessionProvider, useUserSession } from "@/providers/UserSession";
 import { PlayerProvider } from "@/providers/PlayerProvider";
 import GlobalPlayerOverlay from "@/components/GlobalPlayerOverlay";
 import { AppVersionProvider, useAppVersionCheck } from "@/providers/AppVersionProvider";
 import UpdateRequiredModal from "@/components/UpdateRequiredModal";
 import "../config/i18n";
 import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 
 // Initialize Sentry
 Sentry.init({
@@ -52,6 +53,145 @@ function RootLayoutNav() {
 
 function AppContent() {
   const { updateRequired } = useAppVersionCheck();
+  const { session } = useUserSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    let OneSignal: any = null;
+    let LogLevel: any = null;
+
+    try {
+      const oneSignalModule = require('react-native-onesignal');
+      OneSignal = oneSignalModule.OneSignal;
+      LogLevel = oneSignalModule.LogLevel;
+    } catch (error) {
+      console.log('[OneSignal] Module not available (Expo Go limitation):', error);
+      return;
+    }
+
+    if (!OneSignal) return;
+
+    try {
+      console.log('[OneSignal] Initializing...');
+      OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+      
+      const oneSignalAppId = Constants.expoConfig?.extra?.oneSignalAppId;
+      if (oneSignalAppId) {
+        OneSignal.initialize(oneSignalAppId);
+        OneSignal.Notifications.requestPermission(true);
+        console.log('[OneSignal] Initialized successfully');
+      } else {
+        console.log('[OneSignal] App ID not found in config');
+      }
+
+      if (session?.userId) {
+        OneSignal.login(session.userId);
+        console.log('[OneSignal] User logged in:', session.userId);
+      }
+    } catch (error) {
+      console.log('[OneSignal] Initialization error:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    let OneSignal: any = null;
+    try {
+      OneSignal = require('react-native-onesignal').OneSignal;
+    } catch (error) {
+      return;
+    }
+
+    if (!OneSignal) return;
+
+    if (session?.userId) {
+      try {
+        OneSignal.login(session.userId);
+        console.log('[OneSignal] User logged in:', session.userId);
+      } catch (error) {
+        console.log('[OneSignal] Login error:', error);
+      }
+    } else {
+      try {
+        OneSignal.logout();
+        console.log('[OneSignal] User logged out');
+      } catch (error) {
+        console.log('[OneSignal] Logout error:', error);
+      }
+    }
+  }, [session?.userId]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    let OneSignal: any = null;
+    try {
+      OneSignal = require('react-native-onesignal').OneSignal;
+    } catch (error) {
+      return;
+    }
+
+    if (!OneSignal) return;
+
+    const notificationClickHandler = (event: any) => {
+      console.log('[OneSignal] Notification clicked:', event);
+      
+      if (event.notification.additionalData) {
+        const additionalData = event.notification.additionalData;
+        console.log('[OneSignal] Additional data:', additionalData);
+
+        if (additionalData.route) {
+          router.replace(additionalData.route as any);
+        }
+      }
+    };
+
+    try {
+      OneSignal.Notifications.addEventListener('click', notificationClickHandler);
+      console.log('[OneSignal] Click listener registered');
+
+      return () => {
+        try {
+          OneSignal.Notifications.removeEventListener('click', notificationClickHandler);
+        } catch (error) {
+          console.log('[OneSignal] Remove listener error:', error);
+        }
+      };
+    } catch (error) {
+      console.log('[OneSignal] Add listener error:', error);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      console.log('[Deep Link] URL received:', url);
+      const parsed = Linking.parse(url);
+      
+      if (parsed.hostname === 'notification') {
+        console.log('[Deep Link] Notification deep link:', parsed);
+      }
+    });
+
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        console.log('[Deep Link] Initial URL:', url);
+        const parsed = Linking.parse(url);
+        
+        if (parsed.hostname === 'notification') {
+          console.log('[Deep Link] Initial notification deep link:', parsed);
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <>
