@@ -629,7 +629,9 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
           isOnline={isOnline}
           subscriptionStatus={subscriptionStatus}
           subscriptionType={getSubscriptionTypeText()}
-          billingDate={userQuery.data?.lastMembership?.stripe?.dates?.nextBillingDate}
+          billingDate={userQuery.data?.lastMembership?.billingDate}
+          userEmail={userQuery.data?.email || ''}
+          userName={userQuery.data?.wantToBeCalled || userQuery.data?.names || ''}
         />
       )}
 

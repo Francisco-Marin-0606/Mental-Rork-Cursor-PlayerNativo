@@ -15,7 +15,7 @@ import {
 import { ChevronLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { useAppSettings } from '@/lib/api-hooks';
+import { useAppSettings, useCancelSubscription } from '@/lib/api-hooks';
 
 interface ManageSubscriptionModalProps {
   visible: boolean;
@@ -24,11 +24,15 @@ interface ManageSubscriptionModalProps {
   subscriptionStatus?: 'active' | 'cancelled' | 'pending' | 'subscribe';
   subscriptionType?: string;
   billingDate?: string;
+  userEmail?: string;
+  userName?: string;
 }
 
-export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate }: ManageSubscriptionModalProps) {
+export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '' }: ManageSubscriptionModalProps) {
   const { t } = useTranslation();
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+  
+  const cancelSubscriptionMutation = useCancelSubscription();
   
   const { data: appSettingsData } = useAppSettings();
   const appSettings = appSettingsData?.[0];
@@ -259,24 +263,62 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
         console.log('Haptic feedback error:', error);
       }
     }
-    Animated.parallel([
-      Animated.timing(cancelConfirmTranslateX, {
-        toValue: screenWidth,
-        duration: 250,
-        easing: easeInOut,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cancelConfirmOpacity, {
-        toValue: 0,
-        duration: 250,
-        easing: easeInOut,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowCancelConfirm(false);
-      setIsCancelled(true);
-    });
-  }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut]);
+    
+    console.log('[ManageSubscription] Executing cancellation...');
+    console.log('[ManageSubscription] userEmail:', userEmail);
+    console.log('[ManageSubscription] userName:', userName);
+    
+    try {
+      await cancelSubscriptionMutation.mutateAsync({
+        email: userEmail,
+        userName: userName,
+        cancelAtPeriodEnd: false,
+        cancelReason: 'Usuario canceló desde la app',
+        context: 'mental-magnet',
+      });
+      
+      console.log('[ManageSubscription] ✅ Subscription cancelled successfully');
+      
+      Animated.parallel([
+        Animated.timing(cancelConfirmTranslateX, {
+          toValue: screenWidth,
+          duration: 250,
+          easing: easeInOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cancelConfirmOpacity, {
+          toValue: 0,
+          duration: 250,
+          easing: easeInOut,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowCancelConfirm(false);
+        setIsCancelled(true);
+      });
+    } catch (error: any) {
+      console.error('[ManageSubscription] ❌ Error cancelling subscription:', error);
+      console.error('[ManageSubscription] Error message:', error.message);
+      console.error('[ManageSubscription] Error response:', error?.response?.data);
+      
+      Animated.parallel([
+        Animated.timing(cancelConfirmTranslateX, {
+          toValue: screenWidth,
+          duration: 250,
+          easing: easeInOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cancelConfirmOpacity, {
+          toValue: 0,
+          duration: 250,
+          easing: easeInOut,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowCancelConfirm(false);
+      });
+    }
+  }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut, cancelSubscriptionMutation, userEmail, userName]);
 
   const handleCloseCancelConfirm = useCallback(async () => {
     if (Platform.OS !== 'web') {
