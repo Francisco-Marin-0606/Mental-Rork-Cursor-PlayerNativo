@@ -632,6 +632,10 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
           billingDate={userQuery.data?.lastMembership?.billingDate}
           userEmail={userQuery.data?.email || ''}
           userName={userQuery.data?.wantToBeCalled || userQuery.data?.names || ''}
+          onSubscriptionChanged={() => {
+            console.log('[SettingsModal] Refreshing user data after subscription change...');
+            userQuery.refetch();
+          }}
         />
       )}
 

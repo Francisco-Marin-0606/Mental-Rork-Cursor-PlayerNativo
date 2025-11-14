@@ -286,10 +286,11 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
       
       if (userId) {
         try {
-          await checkMembershipStatus.mutateAsync(userId);
-          console.log('[ManageSubscription] ✅ Membership status refreshed');
+          const membershipStatus = await checkMembershipStatus.mutateAsync(userId);
+          console.log('[ManageSubscription] ✅ Membership status refreshed:', membershipStatus);
           
           if (onSubscriptionChanged) {
+            console.log('[ManageSubscription] 📞 Calling onSubscriptionChanged callback...');
             onSubscriptionChanged();
           }
         } catch (refreshError: any) {
