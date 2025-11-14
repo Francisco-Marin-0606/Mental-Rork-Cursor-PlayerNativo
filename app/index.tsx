@@ -32,7 +32,7 @@ import DownloadCompleteModal from '@/components/DownloadCompleteModal';
 import RenameHypnosisModal from '@/components/RenameHypnosisModal';
 import { useUserSession } from '@/providers/UserSession';
 import { usePlayer } from '@/providers/PlayerProvider';
-import { useUser, useAudioRequestsByUserId, useAudiosByUserId, useCheckMembershipStatus, useAppSettings } from '@/lib/api-hooks';
+import { useUser, useAudioRequestsByUserId, useAudiosByUserId, useCheckMembershipStatus, useAppSettings, useHypnosisImage } from '@/lib/api-hooks';
 import { apiClient } from '@/lib/api-client';
 import GlobalNavBar from '@/components/GlobalNavBar';
 import OfflineBanner from '@/components/OfflineBanner';
@@ -888,6 +888,32 @@ export default function HomeScreen() {
   const isLoadingPrevious = levelAudiosLoading && !levelAudiosFetched;
 
   const [imagesByLevel, setImagesByLevel] = useState<any>(null);
+
+  // Obtener niveles únicos de los audioRequests
+  const uniqueLevels = useMemo(() => {
+    if (!bffAudioRequests) return [];
+    const levels = bffAudioRequests
+      .map(req => req?.userLevel)
+      .filter((level): level is string | number => level !== undefined && level !== null && String(level).trim().length > 0)
+      .map(level => String(level));
+    return Array.from(new Set(levels));
+  }, [bffAudioRequests]);
+
+  console.log('[Hypnosis Images] Unique levels:', uniqueLevels);
+
+  // Obtener imágenes para el primer nivel encontrado
+  const firstLevel = uniqueLevels.length > 0 ? uniqueLevels[0] : '';
+  const { data: hypnosisImageData, isLoading: hypnosisImageLoading, error: hypnosisImageError } = useHypnosisImage(firstLevel);
+
+  useEffect(() => {
+    console.log('[Hypnosis Images] hypnosisImageData received:', hypnosisImageData);
+    if (hypnosisImageData) {
+      // Crear un mapa de imágenes por nivel
+      setImagesByLevel({
+        items: [hypnosisImageData]
+      });
+    }
+  }, [hypnosisImageData]);
 
   const restoreScrollPositions = useCallback((targetMode: ViewMode) => {
     try {
