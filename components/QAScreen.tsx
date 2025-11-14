@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   container: {
     position: 'absolute',

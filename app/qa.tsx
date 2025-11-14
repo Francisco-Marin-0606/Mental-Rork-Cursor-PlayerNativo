@@ -13,6 +13,11 @@ export default function QARoute() {
           headerStyle: { backgroundColor: 'transparent' },
           headerBackVisible: false,
           headerLeft: () => null,
+          presentation: 'card',
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
+          animation: 'slide_from_right',
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       />
       <QAScreen />
