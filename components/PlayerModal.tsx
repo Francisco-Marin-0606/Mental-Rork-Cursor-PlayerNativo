@@ -650,7 +650,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
           style={[
             styles.modalContainer, 
             { 
-              height: screenHeight + (Platform.OS === 'android' ? 50 : 0), 
+              height: screenHeight + (Platform.OS === 'android' ? 100 : 0), 
               transform: [{ translateY }] 
             }
           ]}
@@ -660,7 +660,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
             Platform.OS !== 'web' ? (
               <Video
                 ref={videoRef}
-                style={[styles.video, Platform.OS === 'android' && { height: screenHeight + 50 }]}
+                style={[styles.video, Platform.OS === 'android' && { height: screenHeight + 100 }]}
                 source={{ uri: mediaUri }}
                 useNativeControls={false}
                 resizeMode={ResizeMode.COVER}
@@ -688,7 +688,7 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
                 {/* Fondo visual (muteado) */}
                 <Video
                   ref={backgroundVideoRef}
-                  style={[styles.video, Platform.OS === 'android' && { height: screenHeight + 50 }]}
+                  style={[styles.video, Platform.OS === 'android' && { height: screenHeight + 100 }]}
                   source={{ uri: backgroundVideoUri && backgroundVideoUri.length > 0 ? backgroundVideoUri : DEFAULT_BACKGROUND_URI }}
                   useNativeControls={false}
                   resizeMode={ResizeMode.COVER}
