@@ -15,8 +15,7 @@ import {
 import { ChevronLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { useAppSettings, useCancelSubscription, useCheckMembershipStatus } from '@/lib/api-hooks';
-import { useUserSession } from '@/providers/UserSession';
+import { useAppSettings, useCancelSubscription } from '@/lib/api-hooks';
 
 interface ManageSubscriptionModalProps {
   visible: boolean;
@@ -27,16 +26,13 @@ interface ManageSubscriptionModalProps {
   billingDate?: string;
   userEmail?: string;
   userName?: string;
-  onSubscriptionChanged?: () => void;
 }
 
-export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '', onSubscriptionChanged }: ManageSubscriptionModalProps) {
+export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '' }: ManageSubscriptionModalProps) {
   const { t } = useTranslation();
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
-  const { userId, updateMembershipStatus } = useUserSession();
   
   const cancelSubscriptionMutation = useCancelSubscription();
-  const checkMembershipStatus = useCheckMembershipStatus();
   
   const { data: appSettingsData } = useAppSettings();
   const appSettings = appSettingsData?.[0];
@@ -172,7 +168,6 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
     subscriptionStatus === 'subscribe' ? 'cancelled' : subscriptionStatus
   );
   const [showCancelConfirm, setShowCancelConfirm] = useState<boolean>(false);
-  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const cancelConfirmTranslateX = useRef(new Animated.Value(screenWidth)).current;
   const cancelConfirmOpacity = useRef(new Animated.Value(0)).current;
   const yesCancelScale = useRef(new Animated.Value(1)).current;
@@ -181,8 +176,6 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
   const noContinueOpacity = useRef(new Animated.Value(1)).current;
   const confirmTranslateX = useRef(new Animated.Value(0)).current;
   const confirmSwipeOpacity = useRef(new Animated.Value(1)).current;
-  const successModalOpacity = useRef(new Animated.Value(0)).current;
-  const successModalTranslateX = useRef(new Animated.Value(screenWidth)).current;
 
   const confirmPanResponder = useRef(
     PanResponder.create({
@@ -285,24 +278,6 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
       });
       
       console.log('[ManageSubscription] ✅ Subscription cancelled successfully');
-      console.log('[ManageSubscription] 🔄 Refreshing membership status...');
-      
-      if (userId) {
-        try {
-          const membershipStatus = await checkMembershipStatus.mutateAsync(userId);
-          console.log('[ManageSubscription] ✅ Membership status refreshed:', membershipStatus);
-          
-          updateMembershipStatus(membershipStatus.isActive, membershipStatus.subscriptionStatus);
-          console.log('[ManageSubscription] ✅ Session updated with new membership status');
-          
-          if (onSubscriptionChanged) {
-            console.log('[ManageSubscription] 📞 Calling onSubscriptionChanged callback...');
-            onSubscriptionChanged();
-          }
-        } catch (refreshError: any) {
-          console.error('[ManageSubscription] ❌ Error refreshing membership status:', refreshError);
-        }
-      }
       
       Animated.parallel([
         Animated.timing(cancelConfirmTranslateX, {
@@ -320,26 +295,6 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
       ]).start(() => {
         setShowCancelConfirm(false);
         setIsCancelled(true);
-        
-        setTimeout(() => {
-          setShowSuccessModal(true);
-          successModalTranslateX.setValue(screenWidth);
-          successModalOpacity.setValue(0);
-          Animated.parallel([
-            Animated.timing(successModalTranslateX, {
-              toValue: 0,
-              duration: 350,
-              easing: easeInOut,
-              useNativeDriver: true,
-            }),
-            Animated.timing(successModalOpacity, {
-              toValue: 1,
-              duration: 350,
-              easing: easeInOut,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, 100);
       });
     } catch (error: any) {
       console.error('[ManageSubscription] ❌ Error cancelling subscription:', error);
@@ -363,7 +318,7 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
         setShowCancelConfirm(false);
       });
     }
-  }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut, cancelSubscriptionMutation, userEmail, userName, userId, checkMembershipStatus, onSubscriptionChanged, updateMembershipStatus, successModalTranslateX, successModalOpacity]);
+  }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut, cancelSubscriptionMutation, userEmail, userName]);
 
   const handleCloseCancelConfirm = useCallback(async () => {
     if (Platform.OS !== 'web') {
@@ -587,70 +542,6 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
         </View>
       </Animated.View>
 
-      {showSuccessModal && (
-        <View style={styles.confirmOverlay}>
-          <Animated.View style={[styles.confirmBackdrop, { opacity: successModalOpacity }]} pointerEvents="none" />
-          <Animated.View
-            style={[
-              styles.confirmContainer,
-              {
-                height: screenHeight,
-                opacity: successModalOpacity,
-                transform: [{ translateX: successModalTranslateX }],
-              },
-            ]}
-          >
-            <View style={styles.confirmContent}>
-              <View style={styles.confirmBody}>
-                <Text style={[styles.confirmTitle, Platform.OS === 'android' && styles.confirmTitleAndroid]}>
-                  {t('manageSubscription.success.title')}
-                </Text>
-                <Text style={[styles.confirmSubtitle, Platform.OS === 'android' && styles.confirmSubtitleAndroid]}>
-                  {t('manageSubscription.success.subtitle')}
-                </Text>
-
-                <View style={styles.confirmButtons}>
-                  <Animated.View style={{ width: '100%' }}>
-                    <Pressable
-                      style={styles.confirmButtonSecondary}
-                      onPress={async () => {
-                        if (Platform.OS !== 'web') {
-                          try {
-                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                          } catch (error) {
-                            console.log('Haptic feedback error:', error);
-                          }
-                        }
-                        Animated.parallel([
-                          Animated.timing(successModalTranslateX, {
-                            toValue: screenWidth,
-                            duration: 250,
-                            easing: easeInOut,
-                            useNativeDriver: true,
-                          }),
-                          Animated.timing(successModalOpacity, {
-                            toValue: 0,
-                            duration: 250,
-                            easing: easeInOut,
-                            useNativeDriver: true,
-                          }),
-                        ]).start(() => {
-                          setShowSuccessModal(false);
-                          closeModal();
-                        });
-                      }}
-                      android_ripple={Platform.OS === 'android' ? { color: 'transparent' } : undefined}
-                    >
-                      <Text style={styles.confirmButtonSecondaryText}>{t('manageSubscription.success.button')}</Text>
-                    </Pressable>
-                  </Animated.View>
-                </View>
-              </View>
-            </View>
-          </Animated.View>
-        </View>
-      )}
-
       {showCancelConfirm && (
         <View style={styles.confirmOverlay}>
           <Animated.View style={[styles.confirmBackdrop, { opacity: cancelConfirmOpacity }]} pointerEvents="none" />
@@ -691,7 +582,6 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
                   <Animated.View style={{ transform: [{ scale: yesCancelScale }], opacity: yesCancelOpacity, marginBottom: 12 }}>
                     <Pressable
                       style={styles.confirmButton}
-                      disabled={cancelSubscriptionMutation.isPending}
                       onPress={async () => {
                         if (Platform.OS !== 'web') {
                           try {
@@ -734,16 +624,13 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
                       }}
                       android_ripple={Platform.OS === 'android' ? { color: 'transparent' } : undefined}
                     >
-                      <Text style={styles.confirmButtonText}>
-                        {cancelSubscriptionMutation.isPending ? 'Cancelando...' : t('manageSubscription.confirmCancel.confirmButton')}
-                      </Text>
+                      <Text style={styles.confirmButtonText}>{t('manageSubscription.confirmCancel.confirmButton')}</Text>
                     </Pressable>
                   </Animated.View>
 
                   <Animated.View style={{ transform: [{ scale: noContinueScale }], opacity: noContinueOpacity }}>
                     <Pressable
                       style={styles.confirmButtonSecondary}
-                      disabled={cancelSubscriptionMutation.isPending}
                       onPress={async () => {
                         if (Platform.OS !== 'web') {
                           try {
