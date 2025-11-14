@@ -388,39 +388,6 @@ export interface BFFHypnosisImage {
   updatedAt: string;
 }
 
-export interface BFFRevenueCatSubscription {
-  id: string;
-  externalId: string;
-  customerId: string;
-  provider: string;
-  status: string;
-  planId: string;
-  planName: string;
-  startDate: string;
-  endDate: string;
-  renewalDate: string;
-  amount: number;
-  currency: string;
-  metadata?: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BFFRevenueCatBadge {
-  isActive: boolean;
-  subscriptionStatus: string;
-  startDate: string;
-  endDate: string;
-  planName?: string;
-  amount?: number;
-  currency?: string;
-}
-
-export interface BFFUserWithSubscription {
-  user: BFFUser;
-  subscription: BFFRevenueCatBadge;
-}
-
 class APIClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -939,44 +906,6 @@ class APIClient {
     enableAura: async () => {
       const response = await this.client.patch<BFFUser>('/user/enableAura');
       return response.data;
-    },
-    getWithSubscription: async (userId: string) => {
-      console.warn('\n========================================')
-      console.warn('[APIClient user.getWithSubscription] 🚀 REQUEST');
-      console.warn('========================================')
-      console.warn('[APIClient user.getWithSubscription] 📤 ENVIANDO:');
-      console.warn('[APIClient user.getWithSubscription] URL:', `${process.env.EXPO_PUBLIC_APP_URL}/api/user/${userId}/subscription`);
-      console.warn('[APIClient user.getWithSubscription] userId:', userId);
-      console.warn('[APIClient user.getWithSubscription] Timestamp:', new Date().toISOString());
-      
-      try {
-        const response = await this.client.get<BFFUserWithSubscription>(
-          `${process.env.EXPO_PUBLIC_APP_URL}/api/user/${userId}/subscription`
-        );
-        
-        console.warn('[APIClient user.getWithSubscription] 📥 RESPUESTA RECIBIDA:');
-        console.warn('[APIClient user.getWithSubscription] Status:', response.status);
-        console.warn('[APIClient user.getWithSubscription] Data type:', typeof response.data);
-        console.warn('[APIClient user.getWithSubscription] Full response:', JSON.stringify(response.data, null, 2));
-        console.warn('[APIClient user.getWithSubscription] ✅ SUCCESS');
-        console.warn('========================================\n');
-        
-        return response.data;
-      } catch (error: unknown) {
-        const errorObj = error as { message?: string; name?: string; response?: { status?: number; data?: unknown }; stack?: string };
-        console.error('\n========================================')
-        console.error('[APIClient user.getWithSubscription] ❌ ERROR');
-        console.error('========================================')
-        console.error('[APIClient user.getWithSubscription] Error message:', errorObj.message);
-        console.error('[APIClient user.getWithSubscription] Error name:', errorObj.name);
-        console.error('[APIClient user.getWithSubscription] Error status:', errorObj.response?.status);
-        if (errorObj.response?.data) {
-          console.error('[APIClient user.getWithSubscription] Error response data:', JSON.stringify(errorObj.response.data, null, 2));
-        }
-        console.error('[APIClient user.getWithSubscription] Error stack:', errorObj.stack);
-        console.error('========================================\n');
-        throw error;
-      }
     },
   };
 
