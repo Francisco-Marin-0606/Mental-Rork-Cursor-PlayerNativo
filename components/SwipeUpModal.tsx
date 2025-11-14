@@ -1010,7 +1010,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
 const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000000' },
-  modalContainer: { ...StyleSheet.absoluteFillObject, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
+  modalContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
   modalGradientBg: { ...StyleSheet.absoluteFillObject, height: '1500%' },
   modalBgImage: { ...StyleSheet.absoluteFillObject, opacity: 0.22 },
   gradientFill: { flex: 1 },
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 4, backgroundColor: 'transparent', borderRadius: 2, marginBottom: 4 },
   closeButton: { position: 'absolute', top: 24, right: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0, 0, 0, 0.2)', justifyContent: 'center', alignItems: 'center', zIndex: 10, marginRight: 30, marginBottom: 10 },
   scroll: { flex: 1, backgroundColor: 'transparent' },
-  scrollContent: { paddingBottom: 120, position: 'relative' },
+  scrollContent: { paddingBottom: Platform.OS === 'android' ? 60 : 120, position: 'relative' },
   content: { paddingHorizontal: 24, paddingTop: 56, marginTop: 40 },
   imageContainer: { alignItems: 'center', marginBottom: 24, alignSelf: 'center', width: '66%', maxWidth: 300, aspectRatio: 4 / 5, position: 'relative' },
   imageShadowContainer: {
