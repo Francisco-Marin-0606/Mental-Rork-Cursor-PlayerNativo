@@ -153,25 +153,11 @@ Antes de empezar, asegúrate de tener:
 
 **Entitlement:** `Mental`
 
-### 🔑 Falta Solo la Public API Key
+### ✅ Integración Completada!
 
-Para completar la integración, necesito que me entregues:
-
-**Public API Key:**
-```
-Ve a: RevenueCat Dashboard → Project Settings → API Keys
-Busca: "Public API Key" (debería empezar con "appl_" o ser una clave que funcione para ambas plataformas)
-
-Formato que necesito:
-EXPO_PUBLIC_REVENUECAT_API_KEY=appl_xxxxxxxxxxxx
-```
-
-### 📱 Configuración para tu app:
-
-```env
-# Archivo: .env o directo en app.json
-EXPO_PUBLIC_REVENUECAT_API_KEY=TU_PUBLIC_API_KEY_AQUI
-```
+**API Keys configuradas:**
+- iOS: `appl_JIgqffPngTJdriVoNIdXjDxZisc`
+- Android: `goog_NxdUftDeAYMdsAdqhvDiiNOZnKi`
 
 **Entitlement a usar:** `Mental`
 
@@ -179,7 +165,72 @@ EXPO_PUBLIC_REVENUECAT_API_KEY=TU_PUBLIC_API_KEY_AQUI
 - iOS: Mental: Hipnosis Personalizada (App Store)
 - Android: Mental: Hipnosis Personalizada (Play Store)
 
-Una vez me des la Public API Key, procedo con la implementación completa! 🚀
+### 📦 Archivos Creados:
+
+1. **`providers/RevenueCatProvider.tsx`**
+   - Provider principal de RevenueCat
+   - Maneja estado de suscripción
+   - Login automático de usuarios
+   - Listener de cambios en tiempo real
+
+2. **`components/SubscriptionPaywall.tsx`**
+   - Componente de ejemplo de paywall
+   - Muestra planes disponibles
+   - Maneja compras y restauración
+   - Diseño adaptado al estilo de la app
+
+### 🎯 Cómo Usar:
+
+**1. Verificar si el usuario es Premium:**
+```tsx
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
+
+function MyComponent() {
+  const { isPro } = useRevenueCat();
+  
+  if (isPro) {
+    // Usuario premium, mostrar contenido completo
+  } else {
+    // Usuario gratuito, mostrar paywall
+  }
+}
+```
+
+**2. Mostrar el Paywall:**
+```tsx
+import { useState } from 'react';
+import SubscriptionPaywall from '@/components/SubscriptionPaywall';
+
+function MyScreen() {
+  const [showPaywall, setShowPaywall] = useState(false);
+  
+  return (
+    <>
+      <TouchableOpacity onPress={() => setShowPaywall(true)}>
+        <Text>Hazte Premium</Text>
+      </TouchableOpacity>
+      
+      <SubscriptionPaywall 
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+      />
+    </>
+  );
+}
+```
+
+**3. Acceder a más información:**
+```tsx
+const { 
+  offerings,      // Todos los offerings disponibles
+  customerInfo,   // Información completa del cliente
+  isLoading,      // Estado de carga
+  isPro,          // Boolean si tiene acceso premium
+  purchasePackage,// Función para comprar
+  restorePurchases,// Función para restaurar
+  getProducts     // Obtener lista de productos
+} = useRevenueCat();
+```
 
 ---
 
