@@ -477,7 +477,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
               resizeMode="cover"
             />
           ) : null}
-          <Svg width={screenWidth} height={screenHeight * 15}>
+          <Svg width={screenWidth} height={(screenHeight + 100) * 15}>
             <Defs>
               <SvgLinearGradient id="modalBg" x1="0%" y1="0%" x2="86.6%" y2="50%">
                 <Stop offset="0%" stopColor="#a2380e" stopOpacity={1} />
@@ -1008,9 +1008,9 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
 }
 
 const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: 'transparent' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000000' },
-  modalContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
+  modalContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: Platform.OS === 'android' ? -100 : 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
   modalGradientBg: { ...StyleSheet.absoluteFillObject, height: '1500%' },
   modalBgImage: { ...StyleSheet.absoluteFillObject, opacity: 0.22 },
   gradientFill: { flex: 1 },
