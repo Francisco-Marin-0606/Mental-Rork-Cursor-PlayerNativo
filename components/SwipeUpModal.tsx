@@ -460,7 +460,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
         style={[
           styles.modalContainer,
           {
-            height: Platform.OS === 'android' ? screenHeight * 1.08 : screenHeight,
+            height: Platform.OS === 'android' ? screenHeight * 1.00 : screenHeight,
             transform: [{ translateY }],
           },
         ]}
