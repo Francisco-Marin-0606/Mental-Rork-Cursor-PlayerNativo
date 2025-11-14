@@ -518,7 +518,10 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
             scrollEventThrottle={16}
           >
             <TouchableOpacity 
-              style={styles.closeButton} 
+              style={[
+                styles.closeButton,
+                Platform.OS === 'android' && { top: 64 }
+              ]} 
               onPress={closeModal} 
               testID="close-button" 
               activeOpacity={0.7}
@@ -1025,7 +1028,7 @@ const styles = StyleSheet.create({
   closeButton: { position: 'absolute', top: 24, right: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0, 0, 0, 0.2)', justifyContent: 'center', alignItems: 'center', zIndex: 10, marginRight: 30, marginBottom: 10 },
   scroll: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: { paddingBottom: 120, position: 'relative' },
-  content: { paddingHorizontal: 24, paddingTop: 56, marginTop: 40 },
+  content: { paddingHorizontal: 24, paddingTop: Platform.OS === 'android' ? 96 : 56, marginTop: 40 },
   imageContainer: { alignItems: 'center', marginBottom: 24, alignSelf: 'center', width: '66%', maxWidth: 300, aspectRatio: 4 / 5, position: 'relative' },
   imageShadowContainer: {
     width: '100%', aspectRatio: 4 / 5, shadowColor: '#000000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 12.5, elevation: 12.5, borderRadius: 16,
