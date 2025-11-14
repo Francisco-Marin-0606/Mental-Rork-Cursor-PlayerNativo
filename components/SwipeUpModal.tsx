@@ -477,14 +477,14 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
               resizeMode="cover"
             />
           ) : null}
-          <Svg width={screenWidth} height={screenHeight * 15}>
+          <Svg width={screenWidth} height={screenHeight * 20}>
             <Defs>
               <SvgLinearGradient id="modalBg" x1="0%" y1="0%" x2="86.6%" y2="50%">
                 <Stop offset="0%" stopColor="#a2380e" stopOpacity={1} />
                 <Stop offset="100%" stopColor="#7c2709" stopOpacity={1} />
               </SvgLinearGradient>
             </Defs>
-            <Rect x={0} y={0} width={screenWidth} height={screenHeight * 15} fill="url(#modalBg)" />
+            <Rect x={0} y={0} width={screenWidth} height={screenHeight * 20} fill="url(#modalBg)" />
           </Svg>
         </Animated.View>
         <View style={[styles.innerShift, Platform.OS === 'ios' && { marginTop: shiftY }]} testID="modal-inner">
