@@ -73,15 +73,20 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
     console.log('[SwipeUpModal] hypnosisImageData:', hypnosisImageData);
     console.log('[SwipeUpModal] onboardingVideo:', hypnosisImageData?.onboardingVideo);
     
-    if (hypnosisImageData?.onboardingVideo) {
+    if (hypnosisImageData?.onboardingVideo && hypnosisImageData.onboardingVideo.trim().length > 0) {
       console.log('[SwipeUpModal] ✅ Using onboardingVideo from API:', hypnosisImageData.onboardingVideo);
       return hypnosisImageData.onboardingVideo;
     }
     
-    const fallbackUri = 'https://mental-app-images.nyc3.cdn.digitaloceanspaces.com/Videos%20Intro/Portal%201%20Onboarding.mp4';
-    console.log('[SwipeUpModal] ⚠️ Using fallback video URI:', fallbackUri);
-    return fallbackUri;
+    console.log('[SwipeUpModal] ⚠️ No onboardingVideo available or empty string');
+    return '';
   }, [userLevel, hypnosisImageData]);
+  
+  const hasOnboardingVideo = useMemo(() => {
+    const hasVideo = onboardingVideoUri.trim().length > 0;
+    console.log('[SwipeUpModal] hasOnboardingVideo:', hasVideo);
+    return hasVideo;
+  }, [onboardingVideoUri]);
   
   // Initialize animated values with safe defaults for SSR
   const translateY = useRef(new Animated.Value(isClient ? screenHeight : 1000)).current;
@@ -577,16 +582,17 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
                           }
                         }
                         
-                        if (isAvailable && requestId) {
+                        if (isAvailable && requestId && hasOnboardingVideo) {
                           console.log('[SwipeUpModal] Calling updateIsAvailable for requestId:', requestId);
                           try {
                             onMarkedNotAvailable?.(requestId);
                           } catch (error) {
                             console.log('[SwipeUpModal] Error calling onMarkedNotAvailable:', error);
                           }
-                          console.log('[SwipeUpModal] Navigating to ExplanationVideoPlayer because isAvailable is true');
+                          console.log('[SwipeUpModal] Navigating to ExplanationVideoPlayer because isAvailable is true and hasOnboardingVideo');
                           setVideoPlayerVisible(true);
                         } else {
+                          console.log('[SwipeUpModal] Going directly to AudioPlayer - hasOnboardingVideo:', hasOnboardingVideo);
                           setAudioPlayerVisible(true);
                         }
                       }}
@@ -667,7 +673,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
                     </TouchableOpacity>
                   </View>
 
-                  {(isOnline && !isAvailable) && (
+                  {(isOnline && !isAvailable && hasOnboardingVideo) && (
                     <TouchableOpacity
                       style={styles.explainBtnWide}
                       activeOpacity={0.2}
