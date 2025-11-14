@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: -10,
     top: '50%',
-    marginTop: Platform.OS === 'android' ? 6 : -14,
+    marginTop: Platform.OS === 'android' ? 6 : 6,
   },
   title: {
     fontSize: 20.16,
