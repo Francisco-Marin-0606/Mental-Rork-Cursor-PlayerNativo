@@ -53,11 +53,12 @@ function RootLayoutNav() {
 
 function AppContent() {
   const { updateRequired } = useAppVersionCheck();
-  const { session } = useUserSession();
+  const { session, isHydrating } = useUserSession();
   const router = useRouter();
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
+    if (isHydrating) return;
 
     let OneSignal: any = null;
     let LogLevel: any = null;
@@ -88,12 +89,14 @@ function AppContent() {
 
       if (session?.userId) {
         OneSignal.login(session.userId);
-        console.log('[OneSignal] User logged in:', session.userId);
+        console.log('[OneSignal] User logged in on app start:', session.userId);
+      } else {
+        console.log('[OneSignal] No session found on app start');
       }
     } catch (error) {
       console.log('[OneSignal] Initialization error:', error);
     }
-  }, []);
+  }, [isHydrating, session?.userId]);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
