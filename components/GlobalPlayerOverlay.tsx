@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
     position: 'absolute', 
     left: 0, 
     right: 0, 
-    bottom: 200, 
+    bottom: Platform.OS === 'android' ? 150 : 200, 
     alignItems: 'center', 
     justifyContent: 'center' 
   },
