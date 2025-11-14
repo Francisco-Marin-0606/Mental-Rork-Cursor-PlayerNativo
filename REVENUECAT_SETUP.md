@@ -143,16 +143,43 @@ Antes de empezar, asegúrate de tener:
 - [ ] API Key de RevenueCat obtenida
 - [ ] Entitlements configurados
 
-## 🎯 Entregables
+## 🎯 TU CONFIGURACIÓN - Mental: Hipnosis Personalizada
 
-**Una vez completes los pasos, envíame:**
+### ✅ Datos Recibidos:
 
+**Apps Configuradas:**
+- iOS: `appl_JIgqffPngTJdriVoNIdXjDxZisc`
+- Android: `goog_NxdUftDeAYMdsAdqhvDiiNOZnKi`
+
+**Entitlement:** `Mental`
+
+### 🔑 Falta Solo la Public API Key
+
+Para completar la integración, necesito que me entregues:
+
+**Public API Key:**
 ```
-EXPO_PUBLIC_REVENUECAT_API_KEY=tu_api_key_aqui
-ENTITLEMENT_ID=pro (o el nombre que uses)
+Ve a: RevenueCat Dashboard → Project Settings → API Keys
+Busca: "Public API Key" (debería empezar con "appl_" o ser una clave que funcione para ambas plataformas)
+
+Formato que necesito:
+EXPO_PUBLIC_REVENUECAT_API_KEY=appl_xxxxxxxxxxxx
 ```
 
-Y yo me encargo del resto! 🚀
+### 📱 Configuración para tu app:
+
+```env
+# Archivo: .env o directo en app.json
+EXPO_PUBLIC_REVENUECAT_API_KEY=TU_PUBLIC_API_KEY_AQUI
+```
+
+**Entitlement a usar:** `Mental`
+
+**Apps:**
+- iOS: Mental: Hipnosis Personalizada (App Store)
+- Android: Mental: Hipnosis Personalizada (Play Store)
+
+Una vez me des la Public API Key, procedo con la implementación completa! 🚀
 
 ---
 
