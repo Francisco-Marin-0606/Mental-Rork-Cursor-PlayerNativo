@@ -375,9 +375,9 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
             { paddingTop: (Platform.OS === 'android' ? insets.top - 3 : insets.top + 20), paddingBottom: (Platform.OS === 'android' ? insets.bottom : insets.bottom + 20) }
           ]} pointerEvents="box-none">
           <View style={styles.headerContainer}>
-            <Text style={styles.title}>{t('settings.title')}</Text>
+            <Text style={[styles.title, Platform.OS === 'android' && { paddingTop: 25 }]}>{t('settings.title')}</Text>
             <TouchableOpacity 
-              style={styles.closeButton} 
+              style={[styles.closeButton, Platform.OS === 'android' && { paddingTop: 25 }]} 
               onPress={closeModal} 
               testID="close-button" 
               activeOpacity={0.6}
