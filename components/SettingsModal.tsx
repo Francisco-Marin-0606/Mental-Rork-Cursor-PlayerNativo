@@ -22,7 +22,7 @@ import ErrorModal from './ErrorModal';
 import PendingPaymentModal from './PendingPaymentModal';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
-import { useAppSettings } from '@/lib/api-hooks';
+import { useAppSettings, useCheckMembershipStatus } from '@/lib/api-hooks';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +40,7 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { t, i18n: i18nHook } = useTranslation();
-  const { clearSession, session } = useUserSession();
+  const { clearSession, session, setSession } = useUserSession();
   const { data: appSettingsData } = useAppSettings();
   const appSettings = React.useMemo(() => appSettingsData?.[0], [appSettingsData]);
   const stripeRedirectEnabled = React.useMemo(() => appSettings?.redirectStripe?.enabledStripe === true, [appSettings]);
@@ -57,11 +57,35 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
   const [errorModalVisible, setErrorModalVisible] = useState<boolean>(false);
   const [pendingPaymentModalVisible, setPendingPaymentModalVisible] = useState<boolean>(false);
 
+  const checkMembershipMutation = useCheckMembershipStatus();
+
   const userQuery = useQuery({
     queryKey: ['user', session?.userId],
     queryFn: () => session?.userId ? apiClient.user.getById(session.userId) : null,
     enabled: !!session?.userId,
   });
+
+  const handleRefreshMembership = useCallback(async () => {
+    if (!session?.userId) return;
+    
+    console.log('[SettingsModal] Refreshing membership status after cancel...');
+    try {
+      const result = await checkMembershipMutation.mutateAsync(session.userId);
+      console.log('[SettingsModal] Membership status refreshed:', result);
+      
+      if (session && setSession) {
+        setSession({
+          ...session,
+          isMembershipActive: result.isActive,
+          subscriptionStatus: result.subscriptionStatus,
+        });
+      }
+      
+      await userQuery.refetch();
+    } catch (error) {
+      console.error('[SettingsModal] Error refreshing membership:', error);
+    }
+  }, [session, checkMembershipMutation, userQuery, setSession]);
 
   const subscriptionStatus: 'active' | 'cancelled' | 'pending' | 'subscribe' = React.useMemo(() => {
     const membershipType = userQuery.data?.lastMembership?.type;
@@ -632,6 +656,7 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
           billingDate={userQuery.data?.lastMembership?.billingDate}
           userEmail={userQuery.data?.email || ''}
           userName={userQuery.data?.wantToBeCalled || userQuery.data?.names || ''}
+          onRefreshMembership={handleRefreshMembership}
         />
       )}
 

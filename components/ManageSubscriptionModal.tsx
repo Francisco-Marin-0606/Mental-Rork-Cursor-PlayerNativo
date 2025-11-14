@@ -16,6 +16,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppSettings, useCancelSubscription } from '@/lib/api-hooks';
+import CancelSubscriptionResultModal from './CancelSubscriptionResultModal';
 
 interface ManageSubscriptionModalProps {
   visible: boolean;
@@ -26,9 +27,10 @@ interface ManageSubscriptionModalProps {
   billingDate?: string;
   userEmail?: string;
   userName?: string;
+  onRefreshMembership?: () => void;
 }
 
-export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '' }: ManageSubscriptionModalProps) {
+export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '', onRefreshMembership }: ManageSubscriptionModalProps) {
   const { t } = useTranslation();
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   
@@ -168,6 +170,9 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
     subscriptionStatus === 'subscribe' ? 'cancelled' : subscriptionStatus
   );
   const [showCancelConfirm, setShowCancelConfirm] = useState<boolean>(false);
+  const [showResultModal, setShowResultModal] = useState<boolean>(false);
+  const [cancelSuccess, setCancelSuccess] = useState<boolean>(false);
+  const [cancelErrorMessage, setCancelErrorMessage] = useState<string>('');
   const cancelConfirmTranslateX = useRef(new Animated.Value(screenWidth)).current;
   const cancelConfirmOpacity = useRef(new Animated.Value(0)).current;
   const yesCancelScale = useRef(new Animated.Value(1)).current;
@@ -278,6 +283,8 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
       });
       
       console.log('[ManageSubscription] ✅ Subscription cancelled successfully');
+      setCancelSuccess(true);
+      setCancelErrorMessage('');
       
       Animated.parallel([
         Animated.timing(cancelConfirmTranslateX, {
@@ -294,6 +301,7 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
         }),
       ]).start(() => {
         setShowCancelConfirm(false);
+        setShowResultModal(true);
         setIsCancelled(true);
       });
     } catch (error: any) {
@@ -301,6 +309,9 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
       console.error('[ManageSubscription] Error message:', error.message);
       console.error('[ManageSubscription] Error response:', error?.response?.data);
       
+      setCancelSuccess(false);
+      setCancelErrorMessage(error?.response?.data?.message || error.message || 'Error desconocido');
+      
       Animated.parallel([
         Animated.timing(cancelConfirmTranslateX, {
           toValue: screenWidth,
@@ -316,6 +327,7 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
         }),
       ]).start(() => {
         setShowCancelConfirm(false);
+        setShowResultModal(true);
       });
     }
   }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut, cancelSubscriptionMutation, userEmail, userName]);
@@ -592,6 +604,7 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
                         }
                         handleConfirmCancel();
                       }}
+                      disabled={cancelSubscriptionMutation.isPending}
                       onPressIn={() => {
                         Animated.parallel([
                           Animated.spring(yesCancelScale, {
@@ -624,7 +637,9 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
                       }}
                       android_ripple={Platform.OS === 'android' ? { color: 'transparent' } : undefined}
                     >
-                      <Text style={styles.confirmButtonText}>{t('manageSubscription.confirmCancel.confirmButton')}</Text>
+                      <Text style={styles.confirmButtonText}>
+                        {cancelSubscriptionMutation.isPending ? 'Cancelando...' : t('manageSubscription.confirmCancel.confirmButton')}
+                      </Text>
                     </Pressable>
                   </Animated.View>
 
@@ -682,6 +697,19 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
           </Animated.View>
         </View>
       )}
+
+      <CancelSubscriptionResultModal
+        visible={showResultModal}
+        onClose={() => {
+          setShowResultModal(false);
+          if (onRefreshMembership) {
+            console.log('[ManageSubscription] Refreshing membership status after cancel result modal close');
+            onRefreshMembership();
+          }
+        }}
+        success={cancelSuccess}
+        errorMessage={cancelErrorMessage}
+      />
     </View>
   );
 }
