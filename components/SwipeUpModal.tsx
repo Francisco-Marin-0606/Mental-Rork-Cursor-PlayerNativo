@@ -71,11 +71,11 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
     console.log('[SwipeUpModal] 🎬 Determining onboarding video URI');
     console.log('[SwipeUpModal] userLevel:', userLevel);
     console.log('[SwipeUpModal] hypnosisImageData:', hypnosisImageData);
-    console.log('[SwipeUpModal] backgroundVideoPlayer:', hypnosisImageData?.backgroundVideoPlayer);
+    console.log('[SwipeUpModal] onboardingVideo:', hypnosisImageData?.onboardingVideo);
     
-    if (hypnosisImageData?.backgroundVideoPlayer) {
-      console.log('[SwipeUpModal] ✅ Using backgroundVideoPlayer from API:', hypnosisImageData.backgroundVideoPlayer);
-      return hypnosisImageData.backgroundVideoPlayer;
+    if (hypnosisImageData?.onboardingVideo) {
+      console.log('[SwipeUpModal] ✅ Using onboardingVideo from API:', hypnosisImageData.onboardingVideo);
+      return hypnosisImageData.onboardingVideo;
     }
     
     const fallbackUri = 'https://mental-app-images.nyc3.cdn.digitaloceanspaces.com/Videos%20Intro/Portal%201%20Onboarding.mp4';

@@ -383,6 +383,7 @@ export interface BFFHypnosisImage {
   userLevel: string;
   backgroundVideoPlayer: string;
   levelImage: string;
+  onboardingVideo?: string;
   createdAt: string;
   updatedAt: string;
 }
