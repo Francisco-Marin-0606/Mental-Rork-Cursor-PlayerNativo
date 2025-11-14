@@ -2151,7 +2151,11 @@ export default function HomeScreen() {
         </View>
 
         {isOnline && userData?.features?.nextAvailableForm?.enabled !== false && (
-          <View style={[styles.bottomSection, userData?.auraEnabled === false && styles.bottomSectionWithMargin]}>
+          <View style={[
+            styles.bottomSection, 
+            { paddingBottom: (userData?.auraEnabled === false ? 0 : 80) + insets.bottom },
+            userData?.auraEnabled === false && styles.bottomSectionWithMargin
+          ]}>
             {/* ESTABILIZAR: Mantener altura constante durante la transición */}
             <View style={styles.buttonWrapper}>
               {userData === undefined ? (
@@ -2949,7 +2953,7 @@ const styles = StyleSheet.create({
   },
 
   // Pie
-  bottomSection: { paddingHorizontal: 44, paddingBottom: 80, paddingTop: 16 },
+  bottomSection: { paddingHorizontal: 44, paddingTop: 16 },
   bottomSectionWithMargin: { marginBottom: 15 },
   nextButton: { ...BUTTON_STYLES.primaryButton, backgroundColor: '#ff6b35', marginBottom: 0 },
   nextButtonDisabled: { backgroundColor: '#7c2709' },
