@@ -22,7 +22,7 @@ import ExplanationVideoPlayer from './ExplanationVideoPlayer';
 import PendingPaymentModal from './PendingPaymentModal';
 import { BUTTON_STYLES } from '@/constants/buttonStyles';
 import { useUserSession } from '@/providers/UserSession';
-import { useAppSettings } from '@/lib/api-hooks';
+import { useAppSettings, useHypnosisImage } from '@/lib/api-hooks';
 
 
 type DownloadState = 'idle' | 'downloading' | 'completed';
@@ -59,6 +59,29 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
   const appSettings = useMemo(() => appSettingsData?.[0], [appSettingsData]);
   const stripeRedirectEnabled = useMemo(() => appSettings?.redirectStripe?.enabledStripe === true, [appSettings]);
   const stripeRedirectLink = useMemo(() => appSettings?.redirectStripe?.linkStripe, [appSettings]);
+  
+  const userLevelString = useMemo(() => {
+    if (!userLevel) return '';
+    return typeof userLevel === 'string' ? userLevel : String(userLevel);
+  }, [userLevel]);
+  
+  const { data: hypnosisImageData } = useHypnosisImage(userLevelString);
+  
+  const onboardingVideoUri = useMemo(() => {
+    console.log('[SwipeUpModal] 🎬 Determining onboarding video URI');
+    console.log('[SwipeUpModal] userLevel:', userLevel);
+    console.log('[SwipeUpModal] hypnosisImageData:', hypnosisImageData);
+    console.log('[SwipeUpModal] backgroundVideoPlayer:', hypnosisImageData?.backgroundVideoPlayer);
+    
+    if (hypnosisImageData?.backgroundVideoPlayer) {
+      console.log('[SwipeUpModal] ✅ Using backgroundVideoPlayer from API:', hypnosisImageData.backgroundVideoPlayer);
+      return hypnosisImageData.backgroundVideoPlayer;
+    }
+    
+    const fallbackUri = 'https://mental-app-images.nyc3.cdn.digitaloceanspaces.com/Videos%20Intro/Portal%201%20Onboarding.mp4';
+    console.log('[SwipeUpModal] ⚠️ Using fallback video URI:', fallbackUri);
+    return fallbackUri;
+  }, [userLevel, hypnosisImageData]);
   
   // Initialize animated values with safe defaults for SSR
   const translateY = useRef(new Animated.Value(isClient ? screenHeight : 1000)).current;
@@ -806,6 +829,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
       <ExplanationVideoPlayer
         visible={videoPlayerVisible}
         onClose={() => setVideoPlayerVisible(false)}
+        videoUri={onboardingVideoUri}
         onSkipToPlayer={() => {
           setVideoPlayerVisible(false);
           setAudioPlayerVisible(true);
