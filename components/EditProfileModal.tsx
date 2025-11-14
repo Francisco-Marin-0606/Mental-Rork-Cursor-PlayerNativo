@@ -323,6 +323,7 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
           },
         ]}
         testID="edit-profile-container"
+        {...panResponder.panHandlers}
       >
         <View style={styles.content}>
           <View style={styles.header}>
@@ -450,11 +451,11 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3000,
-    backgroundColor: '#170501',
+    backgroundColor: 'transparent',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#170501',
+    backgroundColor: 'transparent',
   },
   modalContainer: {
     ...StyleSheet.absoluteFillObject,
