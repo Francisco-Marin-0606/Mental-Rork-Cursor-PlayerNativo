@@ -147,7 +147,7 @@ const ArrowIcon = ({ direction, size = 34, testID }: { direction: 'next' | 'prev
 export default function GlobalPlayerOverlay() {
   const { uiOpen, setUIOpen, current, previous, changeDirection, userPaused, isPlaying, next, prev, pause, play } = usePlayer();
 
-  const sheetHeight = Math.floor(screenHeight * 0.9);
+  const sheetHeight = Platform.OS === 'android' ? Math.floor(screenHeight * 0.95) : Math.floor(screenHeight * 0.9);
   const translateY = useRef(new Animated.Value(sheetHeight)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
 
