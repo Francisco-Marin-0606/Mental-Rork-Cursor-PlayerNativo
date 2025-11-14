@@ -137,7 +137,12 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
   const DURATION_OPEN = 600;
   const DURATION_CLOSE = 600;
   const isAnimatingRef = useRef<boolean>(false);
-  const shiftY = useMemo(() => screenHeight * 0.03, [screenHeight]);
+  const shiftY = useMemo(() => {
+    if (Platform.OS === 'android') {
+      return screenHeight * -0.05;
+    }
+    return screenHeight * 0.03;
+  }, [screenHeight]);
 
   const tabIndicatorAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   
@@ -455,7 +460,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
         style={[
           styles.modalContainer,
           {
-            height: screenHeight,
+            height: Platform.OS === 'android' ? screenHeight * 1.1 : screenHeight,
             transform: [{ translateY }],
           },
         ]}
