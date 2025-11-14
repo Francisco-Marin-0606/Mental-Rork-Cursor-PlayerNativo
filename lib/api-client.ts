@@ -366,6 +366,18 @@ export interface BFFLatestSubscriptionResponse {
   };
 }
 
+export interface BFFCancelSubscriptionResponse {
+  success: boolean;
+  message: string;
+  subscription: {
+    id: string;
+    status: string;
+    cancelAtPeriodEnd: boolean;
+    canceledAt?: string;
+    currentPeriodEnd: string;
+  };
+}
+
 class APIClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -912,7 +924,13 @@ class APIClient {
   };
 
   payments = {
-    cancelSubscription: async (data: Record<string, unknown>) => {
+    cancelSubscription: async (data: {
+      email: string;
+      userName: string;
+      cancelAtPeriodEnd?: boolean;
+      cancelReason?: string;
+      context?: string;
+    }) => {
       const response = await this.client.post('/payments/cancel-subscription', data);
       return response.data;
     },

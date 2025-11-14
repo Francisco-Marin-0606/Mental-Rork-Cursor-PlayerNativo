@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, BFFUser, BFFComment, BFFCommentsResponse, BFFCreateCommentRequest, BFFAppVersionResponse, BFFLatestSubscriptionResponse } from './api-client';
+import { apiClient, BFFUser, BFFComment, BFFCommentsResponse, BFFCreateCommentRequest, BFFAppVersionResponse, BFFLatestSubscriptionResponse, BFFCancelSubscriptionResponse } from './api-client';
 
 export function useUser(userId: string) {
   return useQuery({
@@ -248,6 +248,22 @@ export function useLatestSubscription() {
     staleTime: 1000 * 60 * 5,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+  });
+}
+
+export function useCancelSubscription() {
+  return useMutation<
+    BFFCancelSubscriptionResponse,
+    Error,
+    {
+      email: string;
+      userName: string;
+      cancelAtPeriodEnd?: boolean;
+      cancelReason?: string;
+      context?: string;
+    }
+  >({
+    mutationFn: (data) => apiClient.payments.cancelSubscription(data),
   });
 }
 
