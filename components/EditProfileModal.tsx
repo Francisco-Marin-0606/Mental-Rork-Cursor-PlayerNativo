@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 44,
     paddingTop: 24,
-    paddingBottom: 55,
+    paddingBottom: Platform.OS === 'android' ? 0 : 55,
     backgroundColor: '#170501',
   },
   saveButton: {
