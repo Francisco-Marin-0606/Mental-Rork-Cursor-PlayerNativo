@@ -1075,8 +1075,40 @@ class APIClient {
 
   hypnosisImages = {
     getByLevel: async (userLevel: string) => {
-      const response = await this.client.get<BFFHypnosisImage>(`/hypnosis-images/level/${userLevel}`);
-      return response.data;
+      console.warn('\n========================================');
+      console.warn('[APIClient hypnosisImages.getByLevel] 🚀 REQUEST');
+      console.warn('========================================');
+      console.warn('[APIClient hypnosisImages.getByLevel] 📤 ENVIANDO:');
+      console.warn('[APIClient hypnosisImages.getByLevel] URL:', `${this.client.defaults.baseURL}/hypnosis-images/level/${userLevel}`);
+      console.warn('[APIClient hypnosisImages.getByLevel] userLevel:', userLevel);
+      console.warn('[APIClient hypnosisImages.getByLevel] Token presente:', !!this.token);
+      console.warn('[APIClient hypnosisImages.getByLevel] Timestamp:', new Date().toISOString());
+      
+      try {
+        const response = await this.client.get<BFFHypnosisImage>(`/hypnosis-images/level/${userLevel}`);
+        
+        console.warn('[APIClient hypnosisImages.getByLevel] 📥 RESPUESTA RECIBIDA:');
+        console.warn('[APIClient hypnosisImages.getByLevel] Status:', response.status);
+        console.warn('[APIClient hypnosisImages.getByLevel] Data type:', typeof response.data);
+        console.warn('[APIClient hypnosisImages.getByLevel] Full response:', JSON.stringify(response.data, null, 2));
+        console.warn('[APIClient hypnosisImages.getByLevel] ✅ SUCCESS');
+        console.warn('========================================\n');
+        
+        return response.data;
+      } catch (error: any) {
+        console.error('\n========================================');
+        console.error('[APIClient hypnosisImages.getByLevel] ❌ ERROR');
+        console.error('========================================');
+        console.error('[APIClient hypnosisImages.getByLevel] Error message:', error.message);
+        console.error('[APIClient hypnosisImages.getByLevel] Error name:', error.name);
+        console.error('[APIClient hypnosisImages.getByLevel] Error status:', error?.response?.status);
+        if (error?.response?.data) {
+          console.error('[APIClient hypnosisImages.getByLevel] Error response data:', JSON.stringify(error.response.data, null, 2));
+        }
+        console.error('[APIClient hypnosisImages.getByLevel] Error stack:', error?.stack);
+        console.error('========================================\n');
+        throw error;
+      }
     },
   };
 }

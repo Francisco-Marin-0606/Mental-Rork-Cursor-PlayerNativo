@@ -268,9 +268,16 @@ export function useCancelSubscription() {
 }
 
 export function useHypnosisImage(userLevel: string) {
+  console.log('[useHypnosisImage] 🔍 Hook inicializado');
+  console.log('[useHypnosisImage] userLevel:', userLevel);
+  console.log('[useHypnosisImage] enabled:', !!userLevel);
+  
   return useQuery<BFFHypnosisImage, Error>({
     queryKey: ['hypnosisImage', userLevel],
-    queryFn: () => apiClient.hypnosisImages.getByLevel(userLevel),
+    queryFn: () => {
+      console.log('[useHypnosisImage] 📡 Ejecutando queryFn para userLevel:', userLevel);
+      return apiClient.hypnosisImages.getByLevel(userLevel);
+    },
     enabled: !!userLevel,
     staleTime: 1000 * 60 * 30,
     retry: 2,
