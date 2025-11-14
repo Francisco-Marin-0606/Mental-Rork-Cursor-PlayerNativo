@@ -149,7 +149,7 @@ export default function LoginScreen() {
       if (supportMode) {
         console.log('[Login] Support mode detected - SKIPPING requestLoginCode');
         console.log('[Login] Navigating directly to auth with support mode enabled');
-        router.push({ pathname: '/auth', params: { email: effectiveEmail, support: '1' } });
+        router.replace({ pathname: '/auth', params: { email: effectiveEmail, support: '1' } });
         return;
       }
 
@@ -159,7 +159,7 @@ export default function LoginScreen() {
       
       if (result?.success) {
         console.log('[Login] Code sent successfully, navigating to auth...');
-        router.push({ pathname: '/auth', params: { email: effectiveEmail, support: '0' } });
+        router.replace({ pathname: '/auth', params: { email: effectiveEmail, support: '0' } });
       } else {
         console.log('[Login] Email not found in DB');
         setErrorMessage(t('login.errors.emailNotFound'));

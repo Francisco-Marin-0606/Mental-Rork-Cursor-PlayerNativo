@@ -232,7 +232,7 @@ export default function AuthScreen() {
             
             if (hasAllRequiredData) {
               console.log('[Auth] User has all required data, navigating to home');
-              router.push('/');
+              router.replace('/');
             } else {
               console.log('[Auth] User missing required data, showing complete data modal');
               setShowCompleteDataModal(true);
@@ -313,7 +313,7 @@ export default function AuthScreen() {
   const handleCompleteData = useCallback((data: { name: string; gender: string; birthdate: string }) => {
     console.log('User data completed:', data);
     setShowCompleteDataModal(false);
-    router.push('/');
+    router.replace('/');
   }, []);
 
   const activeIndex = Math.min(3, Math.max(0, code.length));

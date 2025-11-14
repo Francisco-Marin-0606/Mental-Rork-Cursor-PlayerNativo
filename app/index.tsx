@@ -13,6 +13,7 @@ import {
   FlatList,
   ListRenderItemInfo,
   Linking,
+  BackHandler,
 } from 'react-native';
 import { Image } from 'expo-image';
 import NetInfo from '@react-native-community/netinfo';
@@ -1063,6 +1064,17 @@ export default function HomeScreen() {
 
   const lastRefetchTimeRef = useRef<number>(0);
   const REFETCH_THROTTLE = 5000;
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        console.log('[HomeScreen] Hardware back press blocked');
+        return true;
+      });
+
+      return () => backHandler.remove();
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
