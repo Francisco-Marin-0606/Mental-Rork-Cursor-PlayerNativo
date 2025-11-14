@@ -356,16 +356,16 @@ export function useCheckMembershipStatus() {
           let paymentDateStr = user.lastMembership.membershipPaymentDate;
           let billingDateStr = user.lastMembership.billingDate;
           
-          if (paymentDateStr.includes('+') && !paymentDateStr.endsWith('Z')) {
-            paymentDateStr = paymentDateStr.replace(/([+-]\d{2}:\d{2})$/, '.000Z');
+          if (paymentDateStr.includes('+')) {
+            paymentDateStr = paymentDateStr.replace(/([+-]\d{2}:\d{2})$/, 'Z');
           } else if (!paymentDateStr.endsWith('Z')) {
-            paymentDateStr = paymentDateStr + '.000Z';
+            paymentDateStr = paymentDateStr + 'Z';
           }
           
-          if (billingDateStr.includes('+') && !billingDateStr.endsWith('Z')) {
-            billingDateStr = billingDateStr.replace(/([+-]\d{2}:\d{2})$/, '.000Z');
+          if (billingDateStr.includes('+')) {
+            billingDateStr = billingDateStr.replace(/([+-]\d{2}:\d{2})$/, 'Z');
           } else if (!billingDateStr.endsWith('Z')) {
-            billingDateStr = billingDateStr + '.000Z';
+            billingDateStr = billingDateStr + 'Z';
           }
           
           const paymentDate = new Date(paymentDateStr);
