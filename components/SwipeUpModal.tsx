@@ -1010,8 +1010,8 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
 const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000000' },
-  modalContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: Platform.OS === 'android' ? -50 : 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
-  modalGradientBg: { ...StyleSheet.absoluteFillObject, height: '1500%' },
+  modalContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
+  modalGradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: Platform.OS === 'android' ? -60 : 0, height: '1500%' },
   modalBgImage: { ...StyleSheet.absoluteFillObject, opacity: 0.22 },
   gradientFill: { flex: 1 },
   innerShift: { flex: 1, position: 'relative' },
