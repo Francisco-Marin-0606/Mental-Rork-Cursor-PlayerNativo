@@ -324,8 +324,8 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
         ]}
         testID="edit-profile-container"
       >
-        <Pressable style={styles.content} onPress={Keyboard.dismiss}>
-          <Pressable style={styles.header} onPress={Keyboard.dismiss}>
+        <View style={styles.content}>
+          <View style={styles.header}>
             <TouchableOpacity 
               style={styles.closeButton} 
               onPress={closeModal} 
@@ -335,7 +335,7 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
               <ChevronLeft color="#fbefd9" size={28} />
             </TouchableOpacity>
             <Text style={styles.title}>{t('editProfile.title')}</Text>
-          </Pressable>
+          </View>
 
           <ScrollView 
             style={styles.scrollView}
@@ -419,7 +419,7 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
             </View>
           </ScrollView>
 
-          <Pressable style={styles.footer} onPress={Keyboard.dismiss}>
+          <View style={styles.footer}>
             <Animated.View
               style={{
                 transform: [{ scale: buttonAnimation.scale }],
@@ -439,8 +439,8 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
                 <Text style={styles.saveButtonText}>{isSaving ? 'Guardando...' : t('editProfile.saveButton')}</Text>
               </Pressable>
             </Animated.View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Animated.View>
     </View>
   );
