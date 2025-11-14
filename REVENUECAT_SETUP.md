@@ -179,6 +179,41 @@ Antes de empezar, asegúrate de tener:
    - Maneja compras y restauración
    - Diseño adaptado al estilo de la app
 
+### 🎨 Configurar Paywall en RevenueCat Dashboard
+
+Para usar el paywall personalizado que diseñaste en RevenueCat:
+
+**1. Crear un Paywall en RevenueCat:**
+   1. Ve a RevenueCat Dashboard → **Paywalls**
+   2. Crea un nuevo paywall con el nombre: `PayWall-InApp | BG completo`
+   3. Configura el diseño visual (colores, imágenes, textos)
+   4. **IMPORTANTE**: Añade los siguientes campos en el **metadata** del offering:
+      ```json
+      {
+        "background_color": "#170501",
+        "text_color": "#FFFFFF",
+        "call_to_action_background_color": "#FFFFFF",
+        "call_to_action_text_color": "#170501",
+        "header_text": "Desbloquea Mental Premium",
+        "body_text": "Acceso ilimitado a todas las hipnosis personalizadas",
+        "call_to_action_text": "Suscribirse",
+        "background_image_url": "https://ejemplo.com/imagen.jpg" (opcional),
+        "features": ["Feature 1", "Feature 2", "Feature 3"] (opcional)
+      }
+      ```
+
+**2. IDs Configurados en tu App:**
+   - **Offering ID**: `renewal_off`
+   - **Offering API ID**: `ofrng328a4a1622`
+   - **Project ID**: `proj8c5295cc`
+   - **Paywall Name**: `PayWall-InApp | BG completo`
+
+**3. Cómo la App Carga el Paywall:**
+   - La app hace fetch a la API de RevenueCat para obtener la configuración del paywall
+   - Usa los valores del metadata para personalizar colores, textos y diseño
+   - Si no hay metadata, usa valores por defecto
+   - Los paquetes y precios se cargan automáticamente desde el offering
+
 ### 🎯 Cómo Usar:
 
 **1. Verificar si el usuario es Premium:**

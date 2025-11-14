@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 
 interface SubscriptionPaywallProps {
   visible: boolean;
@@ -21,15 +22,73 @@ interface SubscriptionPaywallProps {
   paywallName?: string;
 }
 
+interface PaywallConfig {
+  id: string;
+  display_name: string;
+  background_image_url?: string;
+  background_color?: string;
+  text_color?: string;
+  call_to_action_background_color?: string;
+  call_to_action_text_color?: string;
+  header_text?: string;
+  body_text?: string;
+  call_to_action_text?: string;
+  features?: string[];
+}
+
 export default function SubscriptionPaywall({ 
   visible, 
   onClose, 
-  offeringIdentifier = 'current',
-  paywallName 
+  offeringIdentifier = 'renewal_off',
+  paywallName = 'PayWall-InApp | BG completo'
 }: SubscriptionPaywallProps) {
   const { offerings, isLoading, isPro, purchasePackage, restorePurchases } = useRevenueCat();
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [paywallConfig, setPaywallConfig] = useState<PaywallConfig | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !visible) {
+      setLoadingConfig(false);
+      return;
+    }
+
+    const fetchPaywallConfig = async () => {
+      try {
+        setLoadingConfig(true);
+        console.log('[Paywall] Fetching paywall config for:', offeringIdentifier);
+        
+        const response = await fetch(
+          `https://api.revenuecat.com/v2/projects/proj8c5295cc/offerings/ofrng328a4a1622`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.log('[Paywall] API error:', response.status);
+          setLoadingConfig(false);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('[Paywall] Received config:', JSON.stringify(data, null, 2));
+        
+        if (data.metadata) {
+          setPaywallConfig(data.metadata as PaywallConfig);
+        }
+      } catch (err) {
+        console.error('[Paywall] Error fetching paywall config:', err);
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+
+    fetchPaywallConfig();
+  }, [visible, offeringIdentifier]);
 
   if (Platform.OS === 'web') {
     return (
@@ -77,7 +136,8 @@ export default function SubscriptionPaywall({
       } else {
         Alert.alert('No hay compras', 'No se encontraron compras anteriores');
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('[Paywall] Restore error:', err);
       Alert.alert('Error', 'No se pudieron restaurar las compras. Por favor, intenta de nuevo.');
     } finally {
       setIsRestoring(false);
@@ -108,12 +168,31 @@ export default function SubscriptionPaywall({
     );
   }
 
+  const offering = offeringIdentifier === 'current' ? offerings?.current : offerings?.all[offeringIdentifier];
+  const backgroundColor = paywallConfig?.background_color || '#170501';
+  const textColor = paywallConfig?.text_color || '#FFFFFF';
+  const headerText = paywallConfig?.header_text || 'Desbloquea Mental Premium';
+  const bodyText = paywallConfig?.body_text || 'Acceso ilimitado a todas las hipnosis personalizadas';
+  const ctaText = paywallConfig?.call_to_action_text || 'Suscribirse';
+  const ctaBgColor = paywallConfig?.call_to_action_background_color || '#FFFFFF';
+  const ctaTextColor = paywallConfig?.call_to_action_text_color || '#170501';
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.container}>
-        <LinearGradient colors={['#170501', '#2A0A05']} style={styles.content}>
+        <View style={[styles.content, { backgroundColor }]}>
+          {paywallConfig?.background_image_url && (
+            <Image
+              source={{ uri: paywallConfig.background_image_url }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
+          )}
+          
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]} />
+
           <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
-            <X size={24} color="#FFFFFF" />
+            <X size={24} color={textColor} />
           </TouchableOpacity>
 
           <ScrollView
@@ -121,38 +200,30 @@ export default function SubscriptionPaywall({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.title}>Desbloquea Mental Premium</Text>
-            <Text style={styles.subtitle}>
-              Acceso ilimitado a todas las hipnosis personalizadas
+            <Text style={[styles.title, { color: textColor }]}>{headerText}</Text>
+            <Text style={[styles.subtitle, { color: textColor }]}>
+              {bodyText}
             </Text>
 
-            <View style={styles.featuresContainer}>
-              <View style={styles.feature}>
-                <Text style={styles.featureIcon}>✨</Text>
-                <Text style={styles.featureText}>Hipnosis personalizadas ilimitadas</Text>
+            {paywallConfig?.features && paywallConfig.features.length > 0 && (
+              <View style={styles.featuresContainer}>
+                {paywallConfig.features.map((feature, index) => (
+                  <View key={index} style={styles.feature}>
+                    <Text style={styles.featureIcon}>✓</Text>
+                    <Text style={[styles.featureText, { color: textColor }]}>{feature}</Text>
+                  </View>
+                ))}
               </View>
-              <View style={styles.feature}>
-                <Text style={styles.featureIcon}>🎵</Text>
-                <Text style={styles.featureText}>Acceso a toda la biblioteca de audios</Text>
-              </View>
-              <View style={styles.feature}>
-                <Text style={styles.featureIcon}>📱</Text>
-                <Text style={styles.featureText}>Descarga y escucha offline</Text>
-              </View>
-              <View style={styles.feature}>
-                <Text style={styles.featureIcon}>🔄</Text>
-                <Text style={styles.featureText}>Sincronización entre dispositivos</Text>
-              </View>
-            </View>
+            )}
 
-            {isLoading ? (
+            {loadingConfig || isLoading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#FFFFFF" />
-                <Text style={styles.loadingText}>Cargando planes...</Text>
+                <ActivityIndicator size="large" color={textColor} />
+                <Text style={[styles.loadingText, { color: textColor }]}>Cargando planes...</Text>
               </View>
-            ) : (offerings && (offerings.current || offerings.all[offeringIdentifier])) ? (
+            ) : offering && offering.availablePackages.length > 0 ? (
               <View style={styles.plansContainer}>
-                {((offeringIdentifier === 'current' ? offerings.current : offerings.all[offeringIdentifier]) || offerings.current)?.availablePackages.map((pkg) => {
+                {offering.availablePackages.map((pkg) => {
                   const price = pkg.product.priceString;
                   const isAnnual = pkg.packageType === 'ANNUAL';
                   
@@ -164,22 +235,22 @@ export default function SubscriptionPaywall({
                       disabled={isPurchasing}
                     >
                       {isAnnual && (
-                        <View style={styles.popularBadge}>
-                          <Text style={styles.popularText}>MÁS POPULAR</Text>
+                        <View style={[styles.popularBadge, { backgroundColor: ctaBgColor }]}>
+                          <Text style={[styles.popularText, { color: ctaTextColor }]}>MÁS POPULAR</Text>
                         </View>
                       )}
                       
-                      <Text style={styles.planTitle}>{pkg.product.title}</Text>
-                      <Text style={styles.planPrice}>{price}</Text>
-                      <Text style={styles.planDescription}>
+                      <Text style={[styles.planTitle, { color: textColor }]}>{pkg.product.title}</Text>
+                      <Text style={[styles.planPrice, { color: textColor }]}>{price}</Text>
+                      <Text style={[styles.planDescription, { color: textColor }]}>
                         {pkg.product.description}
                       </Text>
 
                       {isPurchasing ? (
-                        <ActivityIndicator color="#FFFFFF" style={styles.purchasingIndicator} />
+                        <ActivityIndicator color={ctaTextColor} style={styles.purchasingIndicator} />
                       ) : (
-                        <View style={styles.subscribeButton}>
-                          <Text style={styles.subscribeButtonText}>Suscribirse</Text>
+                        <View style={[styles.subscribeButton, { backgroundColor: ctaBgColor }]}>
+                          <Text style={[styles.subscribeButtonText, { color: ctaTextColor }]}>{ctaText}</Text>
                         </View>
                       )}
                     </TouchableOpacity>
@@ -188,7 +259,7 @@ export default function SubscriptionPaywall({
               </View>
             ) : (
               <View style={styles.noOfferings}>
-                <Text style={styles.noOfferingsText}>
+                <Text style={[styles.noOfferingsText, { color: textColor }]}>
                   No hay planes disponibles en este momento
                 </Text>
               </View>
@@ -200,17 +271,17 @@ export default function SubscriptionPaywall({
               disabled={isRestoring}
             >
               {isRestoring ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={textColor} size="small" />
               ) : (
-                <Text style={styles.restoreButtonText}>Restaurar Compras</Text>
+                <Text style={[styles.restoreButtonText, { color: textColor }]}>Restaurar Compras</Text>
               )}
             </TouchableOpacity>
 
-            <Text style={styles.disclaimer}>
+            <Text style={[styles.disclaimer, { color: textColor }]}>
               Las suscripciones se renuevan automáticamente. Cancela en cualquier momento desde la configuración de tu cuenta.
             </Text>
           </ScrollView>
-        </LinearGradient>
+        </View>
       </View>
     </Modal>
   );
@@ -320,7 +391,7 @@ const styles = StyleSheet.create({
   },
   planDescription: {
     fontSize: 14,
-    color: '#CCCCCC',
+    opacity: 0.8,
     marginBottom: 16,
   },
   subscribeButton: {
