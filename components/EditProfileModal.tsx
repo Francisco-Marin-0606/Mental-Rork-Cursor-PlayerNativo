@@ -455,6 +455,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 3000,
+    backgroundColor: Platform.OS === 'android' ? '#170501' : 'transparent',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -462,6 +463,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     position: 'absolute',
+    top: 0,
     bottom: 0,
     left: 0,
     right: 0,
