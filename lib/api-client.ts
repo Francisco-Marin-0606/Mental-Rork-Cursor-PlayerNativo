@@ -378,6 +378,15 @@ export interface BFFCancelSubscriptionResponse {
   };
 }
 
+export interface BFFHypnosisImage {
+  _id: string;
+  userLevel: string;
+  backgroundVideoPlayer: string;
+  levelImage: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 class APIClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -1060,6 +1069,13 @@ class APIClient {
     },
     deleteComment: async (id: string) => {
       const response = await this.client.delete(`/users-feedback/comments/${id}`);
+      return response.data;
+    },
+  };
+
+  hypnosisImages = {
+    getByLevel: async (userLevel: string) => {
+      const response = await this.client.get<BFFHypnosisImage>(`/hypnosis-images/level/${userLevel}`);
       return response.data;
     },
   };

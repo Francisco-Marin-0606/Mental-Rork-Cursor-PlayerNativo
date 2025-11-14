@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, BFFUser, BFFComment, BFFCommentsResponse, BFFCreateCommentRequest, BFFAppVersionResponse, BFFLatestSubscriptionResponse, BFFCancelSubscriptionResponse } from './api-client';
+import { apiClient, BFFUser, BFFComment, BFFCommentsResponse, BFFCreateCommentRequest, BFFAppVersionResponse, BFFLatestSubscriptionResponse, BFFCancelSubscriptionResponse, BFFHypnosisImage } from './api-client';
 
 export function useUser(userId: string) {
   return useQuery({
@@ -264,6 +264,17 @@ export function useCancelSubscription() {
     }
   >({
     mutationFn: (data) => apiClient.payments.cancelSubscription(data),
+  });
+}
+
+export function useHypnosisImage(userLevel: string) {
+  return useQuery<BFFHypnosisImage, Error>({
+    queryKey: ['hypnosisImage', userLevel],
+    queryFn: () => apiClient.hypnosisImages.getByLevel(userLevel),
+    enabled: !!userLevel,
+    staleTime: 1000 * 60 * 30,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
