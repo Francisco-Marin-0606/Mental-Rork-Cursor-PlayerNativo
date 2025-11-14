@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000',
+    backgroundColor: '#170501',
   },
   modalContainer: {
     position: 'absolute',
