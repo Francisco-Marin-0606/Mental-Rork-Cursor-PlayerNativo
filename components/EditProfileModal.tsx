@@ -449,28 +449,19 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
 
 const styles = StyleSheet.create({
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     zIndex: 3000,
     backgroundColor: '#170501',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000',
+    backgroundColor: '#170501',
   },
   modalContainer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#170501',
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-    overflow: 'hidden',
   },
   content: {
     flex: 1,
