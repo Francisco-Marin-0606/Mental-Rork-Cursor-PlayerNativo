@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   footerNav: {
     backgroundColor: '#170501',
     paddingHorizontal: 44,
-    paddingTop: 8,
-    paddingBottom: 29,
+    paddingTop: Platform.OS === 'android' ? 12 : 8,
+    paddingBottom: Platform.OS === 'android' ? 12 : 29,
     position: 'absolute' as const,
     bottom: 0,
     left: 0,
