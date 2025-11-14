@@ -137,7 +137,7 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
   const DURATION_OPEN = 600;
   const DURATION_CLOSE = 600;
   const isAnimatingRef = useRef<boolean>(false);
-  const shiftY = useMemo(() => Platform.OS === 'android' ? 0 : screenHeight * 0.03, [screenHeight]);
+  const shiftY = useMemo(() => Platform.OS === 'ios' ? screenHeight * 0.03 : 0, [screenHeight]);
 
   const tabIndicatorAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   
@@ -477,17 +477,17 @@ export default function SwipeUpModal({ visible, onClose, imageUri, title, messag
               resizeMode="cover"
             />
           ) : null}
-          <Svg width={screenWidth} height={screenHeight * 8}>
+          <Svg width={screenWidth} height={screenHeight * 10}>
             <Defs>
               <SvgLinearGradient id="modalBg" x1="0%" y1="0%" x2="86.6%" y2="50%">
                 <Stop offset="0%" stopColor="#a2380e" stopOpacity={1} />
                 <Stop offset="100%" stopColor="#7c2709" stopOpacity={1} />
               </SvgLinearGradient>
             </Defs>
-            <Rect x={0} y={0} width={screenWidth} height={screenHeight * 8} fill="url(#modalBg)" />
+            <Rect x={0} y={0} width={screenWidth} height={screenHeight * 10} fill="url(#modalBg)" />
           </Svg>
         </Animated.View>
-        <View style={[styles.innerShift, { marginTop: shiftY }]} testID="modal-inner">
+        <View style={[styles.innerShift, Platform.OS === 'ios' && { marginTop: shiftY }]} testID="modal-inner">
           {Platform.OS !== 'android' && (
             <View style={styles.dragArea} testID="drag-area">
               <View style={styles.handle} />
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000000' },
   modalContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, overflow: 'hidden' },
-  modalGradientBg: { ...StyleSheet.absoluteFillObject, height: '800%' },
+  modalGradientBg: { ...StyleSheet.absoluteFillObject, height: '1000%' },
   modalBgImage: { ...StyleSheet.absoluteFillObject, opacity: 0.22 },
   gradientFill: { flex: 1 },
   innerShift: { flex: 1, position: 'relative' },
