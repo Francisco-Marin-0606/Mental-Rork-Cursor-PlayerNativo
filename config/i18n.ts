@@ -52,6 +52,11 @@ const initI18n = async () => {
                   confirmButton: 'Sí, quiero cancelar',
                   cancelButton: 'No, deseo continuar',
                 },
+                success: {
+                  title: 'Tu suscripción fue cancelada con éxito',
+                  subtitle: 'Tu suscripción permanecerá activa hasta el final de tu período de facturación actual.',
+                  button: 'Volver',
+                },
               },
               editProfile: {
                 title: 'Editar mi perfil',
@@ -320,6 +325,11 @@ const initI18n = async () => {
                   subtitle: 'The next click opens a timeline where you won\'t be able to request new hypnosis.\n\nAnd to listen to previous ones, you will have to renew your subscription.',
                   confirmButton: 'Yes, I want to cancel',
                   cancelButton: 'No, continue',
+                },
+                success: {
+                  title: 'Your subscription has been successfully cancelled',
+                  subtitle: 'Your subscription will remain active until the end of your current billing period.',
+                  button: 'Go back',
                 },
               },
               editProfile: {
