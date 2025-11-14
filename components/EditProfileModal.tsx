@@ -325,7 +325,7 @@ export default function EditProfileModal({ visible, onClose }: EditProfileModalP
         testID="edit-profile-container"
       >
         <Pressable style={styles.content} onPress={Keyboard.dismiss}>
-          <Pressable style={styles.header} onPress={Keyboard.dismiss} {...panResponder.panHandlers}>
+          <Pressable style={styles.header} onPress={Keyboard.dismiss}>
             <TouchableOpacity 
               style={styles.closeButton} 
               onPress={closeModal} 
