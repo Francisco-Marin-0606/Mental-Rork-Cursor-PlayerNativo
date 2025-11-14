@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useUserSession } from '@/providers/UserSession';
 import { useUser, useCheckMembershipStatus } from '@/lib/api-hooks';
@@ -8,6 +9,7 @@ import { useUser, useCheckMembershipStatus } from '@/lib/api-hooks';
 export default function GlobalNavBar() {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const { session, updateMembershipStatus } = useUserSession();
   const { data: userData } = useUser(session?.userId ?? '');
   const checkMembershipMutation = useCheckMembershipStatus();
@@ -48,7 +50,10 @@ export default function GlobalNavBar() {
   }
 
   return (
-    <View style={styles.footerNav}>
+    <View style={[
+      styles.footerNav,
+      { paddingBottom: (Platform.OS === 'android' ? 12 : 29) + insets.bottom }
+    ]}>
       <View style={styles.navToggleContainer}>
         <Pressable
           style={styles.navToggleOption}
@@ -100,7 +105,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#170501',
     paddingHorizontal: 44,
     paddingTop: Platform.OS === 'android' ? 12 : 8,
-    paddingBottom: Platform.OS === 'android' ? 12 : 29,
     position: 'absolute' as const,
     bottom: 0,
     left: 0,
