@@ -5,7 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import * as SystemUI from "expo-system-ui";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { StyleSheet, Platform, Linking } from "react-native";
+import { StyleSheet, Platform, Linking, AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { UserSessionProvider, useUserSession } from "@/providers/UserSession";
 import { PlayerProvider } from "@/providers/PlayerProvider";
@@ -220,6 +220,31 @@ function RootLayout() {
     };
 
     initializeApp();
+  }, []);
+
+  // Fix para Android: Forzar recalculación de insets cuando la app regresa del background
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('[SafeArea] App returned to foreground, forcing insets recalculation...');
+        
+        // Forzar un pequeño cambio en el SystemUI para que Android recalcule los insets
+        try {
+          await SystemUI.setBackgroundColorAsync('#000000');
+          setTimeout(async () => {
+            await SystemUI.setBackgroundColorAsync('transparent');
+          }, 10);
+        } catch (error) {
+          console.log('[SafeArea] Error recalculating insets:', error);
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return (
