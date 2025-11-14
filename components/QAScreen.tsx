@@ -320,13 +320,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    marginTop: Platform.OS === 'android' ? 8 : 15,
+    marginTop: Platform.OS === 'android' ? 28 : 15,
   },
   closeButton: {
     position: 'absolute',
     left: -10,
     top: '50%',
-    marginTop: -14,
+    marginTop: Platform.OS === 'android' ? 6 : -14,
   },
   title: {
     fontSize: 20.16,
