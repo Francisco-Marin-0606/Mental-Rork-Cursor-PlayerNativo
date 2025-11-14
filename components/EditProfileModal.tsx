@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 3000,
-    backgroundColor: Platform.OS === 'android' ? '#170501' : 'transparent',
+    backgroundColor: '#170501',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
