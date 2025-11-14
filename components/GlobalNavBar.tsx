@@ -52,7 +52,7 @@ export default function GlobalNavBar() {
   return (
     <View style={[
       styles.footerNav,
-      { paddingBottom: (Platform.OS === 'android' ? 4 : 6.5) + insets.bottom }
+      { paddingBottom: (Platform.OS === 'android' ? 1 : 1) + insets.bottom }
     ]}>
       <View style={styles.navToggleContainer}>
         <Pressable
