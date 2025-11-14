@@ -372,7 +372,7 @@ export default function SettingsModal({ visible, onClose, isOnline = true }: Set
       >
         <View style={[
             styles.modalContent,
-            { paddingTop: (Platform.OS === 'android' ? insets.top + 12 : insets.top + 20), paddingBottom: insets.bottom + 20 }
+            { paddingTop: (Platform.OS === 'android' ? insets.top - 3 : insets.top + 20), paddingBottom: (Platform.OS === 'android' ? insets.bottom : insets.bottom + 20) }
           ]} pointerEvents="box-none">
           <View style={styles.headerContainer}>
             <Text style={styles.title}>{t('settings.title')}</Text>
