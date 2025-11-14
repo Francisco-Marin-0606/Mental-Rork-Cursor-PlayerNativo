@@ -17,9 +17,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface SubscriptionPaywallProps {
   visible: boolean;
   onClose: () => void;
+  offeringIdentifier?: string;
+  paywallName?: string;
 }
 
-export default function SubscriptionPaywall({ visible, onClose }: SubscriptionPaywallProps) {
+export default function SubscriptionPaywall({ 
+  visible, 
+  onClose, 
+  offeringIdentifier = 'current',
+  paywallName 
+}: SubscriptionPaywallProps) {
   const { offerings, isLoading, isPro, purchasePackage, restorePurchases } = useRevenueCat();
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -143,9 +150,9 @@ export default function SubscriptionPaywall({ visible, onClose }: SubscriptionPa
                 <ActivityIndicator size="large" color="#FFFFFF" />
                 <Text style={styles.loadingText}>Cargando planes...</Text>
               </View>
-            ) : offerings?.current ? (
+            ) : (offerings && (offerings.current || offerings.all[offeringIdentifier])) ? (
               <View style={styles.plansContainer}>
-                {offerings.current.availablePackages.map((pkg) => {
+                {((offeringIdentifier === 'current' ? offerings.current : offerings.all[offeringIdentifier]) || offerings.current)?.availablePackages.map((pkg) => {
                   const price = pkg.product.priceString;
                   const isAnnual = pkg.packageType === 'ANNUAL';
                   

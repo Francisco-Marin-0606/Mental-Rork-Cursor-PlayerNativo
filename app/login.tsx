@@ -25,11 +25,13 @@ import { useRequestLoginCode, useAppSettings, useAuraHertz } from '@/lib/api-hoo
 import Constants from 'expo-constants';
 import { apiClient } from '@/lib/api-client';
 import { Image as ExpoImage } from 'expo-image';
+import SubscriptionPaywall from '@/components/SubscriptionPaywall';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState<boolean>(false);
   const enterButtonScale = useRef(new Animated.Value(1)).current;
   const enterButtonOpacity = useRef(new Animated.Value(1)).current;
   const createAccountButtonScale = useRef(new Animated.Value(1)).current;
@@ -416,7 +418,8 @@ export default function LoginScreen() {
                   if (Platform.OS !== 'web') {
                     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
                   }
-                  console.log('Create account pressed');
+                  console.log('[Login] Create account pressed - opening paywall');
+                  setShowPaywall(true);
                 }}
                 testID="create-account-link"
                 android_ripple={{ color: 'rgba(255,138,0,0.15)' }}
@@ -431,6 +434,13 @@ export default function LoginScreen() {
         </View>
       </SafeAreaView>
       </TouchableWithoutFeedback>
+
+      <SubscriptionPaywall
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        offeringIdentifier="renewal_off"
+        paywallName="PayWall-InApp | BG completo"
+      />
     </View>
   );
 }
