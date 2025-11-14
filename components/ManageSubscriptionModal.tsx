@@ -751,6 +751,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 40,
     marginTop: Platform.OS === 'android' ? 0 : 30,
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   closeButton: {
     position: 'absolute',
