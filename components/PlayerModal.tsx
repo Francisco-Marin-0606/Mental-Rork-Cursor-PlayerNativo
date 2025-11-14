@@ -647,7 +647,13 @@ export default function PlayerModal({ visible, onClose, mode, title, mediaUri, b
         <Animated.View style={[styles.backdrop, { opacity }]} testID="player-backdrop" pointerEvents="auto" />
 
         <Animated.View
-          style={[styles.modalContainer, { height: screenHeight, transform: [{ translateY }] }]}
+          style={[
+            styles.modalContainer, 
+            { 
+              height: screenHeight + (Platform.OS === 'android' ? 50 : 0), 
+              transform: [{ translateY }] 
+            }
+          ]}
           testID="player-container"
         >
           {mode === 'video' ? (
