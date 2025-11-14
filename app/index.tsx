@@ -901,19 +901,43 @@ export default function HomeScreen() {
 
   console.log('[Hypnosis Images] Unique levels:', uniqueLevels);
 
-  // Obtener imágenes para el primer nivel encontrado
-  const firstLevel = uniqueLevels.length > 0 ? uniqueLevels[0] : '';
-  const { data: hypnosisImageData, isLoading: hypnosisImageLoading, error: hypnosisImageError } = useHypnosisImage(firstLevel);
-
+  // Obtener imágenes para TODOS los niveles
   useEffect(() => {
-    console.log('[Hypnosis Images] hypnosisImageData received:', hypnosisImageData);
-    if (hypnosisImageData) {
-      // Crear un mapa de imágenes por nivel
-      setImagesByLevel({
-        items: [hypnosisImageData]
-      });
+    if (uniqueLevels.length === 0) {
+      console.log('[Hypnosis Images] No unique levels found, skipping image fetch');
+      return;
     }
-  }, [hypnosisImageData]);
+
+    console.log('[Hypnosis Images] Fetching images for all levels:', uniqueLevels);
+    
+    // Fetch images for all levels in parallel
+    Promise.all(
+      uniqueLevels.map(level => 
+        apiClient.hypnosisImages.getByLevel(level)
+          .then(data => ({ level, data }))
+          .catch(err => {
+            console.error(`[Hypnosis Images] Error fetching level ${level}:`, err);
+            return { level, data: null };
+          })
+      )
+    ).then(results => {
+      console.log('[Hypnosis Images] Received results for all levels:', results.length);
+      
+      // Filter out nulls and create items array
+      const items = results
+        .filter(result => result.data !== null)
+        .map(result => result.data);
+      
+      console.log('[Hypnosis Images] Valid images received:', items.length);
+      
+      if (items.length > 0) {
+        setImagesByLevel({ items });
+        console.log('[Hypnosis Images] Images by level updated');
+      }
+    }).catch(err => {
+      console.error('[Hypnosis Images] Error fetching all images:', err);
+    });
+  }, [uniqueLevels.join(',')]);
 
   const restoreScrollPositions = useCallback((targetMode: ViewMode) => {
     try {
