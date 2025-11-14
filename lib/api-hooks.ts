@@ -304,50 +304,76 @@ export function useCheckMembershipStatus() {
         if (membershipType === 'yearly' && user.lastMembership?.membershipPaymentDate) {
           const now = new Date();
           
-          const paymentDateStr = user.lastMembership.membershipPaymentDate.endsWith('Z') 
-            ? user.lastMembership.membershipPaymentDate 
-            : user.lastMembership.membershipPaymentDate + 'Z';
+          let paymentDateStr = user.lastMembership.membershipPaymentDate;
+          
+          if (paymentDateStr.includes('+') && !paymentDateStr.endsWith('Z')) {
+            paymentDateStr = paymentDateStr.replace(/([+-]\d{2}:\d{2})$/, '.000Z');
+          } else if (!paymentDateStr.endsWith('Z')) {
+            paymentDateStr = paymentDateStr + '.000Z';
+          }
           
           const paymentDate = new Date(paymentDateStr);
-          const oneYearLater = new Date(paymentDate);
-          oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
           
-          isActive = now >= paymentDate && now <= oneYearLater;
-          
-          console.warn('[useCheckMembershipStatus] ===== CÁLCULO DE isActive (YEARLY) =====');
-          console.warn('[useCheckMembershipStatus] membershipType:', membershipType);
-          console.warn('[useCheckMembershipStatus] paymentDate (original):', user.lastMembership.membershipPaymentDate);
-          console.warn('[useCheckMembershipStatus] paymentDate (UTC):', paymentDate.toISOString());
-          console.warn('[useCheckMembershipStatus] oneYearLater (UTC):', oneYearLater.toISOString());
-          console.warn('[useCheckMembershipStatus] now:', now.toISOString());
-          console.warn('[useCheckMembershipStatus] now >= paymentDate:', now >= paymentDate);
-          console.warn('[useCheckMembershipStatus] now <= oneYearLater:', now <= oneYearLater);
-          console.warn('[useCheckMembershipStatus] ✅ isActive:', isActive);
+          if (isNaN(paymentDate.getTime())) {
+            console.error('[useCheckMembershipStatus] ❌ Invalid payment date:', user.lastMembership.membershipPaymentDate);
+            isActive = false;
+          } else {
+            const oneYearLater = new Date(paymentDate.getTime());
+            oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+            
+            isActive = now >= paymentDate && now <= oneYearLater;
+            
+            console.warn('[useCheckMembershipStatus] ===== CÁLCULO DE isActive (YEARLY) =====');
+            console.warn('[useCheckMembershipStatus] membershipType:', membershipType);
+            console.warn('[useCheckMembershipStatus] paymentDate (original):', user.lastMembership.membershipPaymentDate);
+            console.warn('[useCheckMembershipStatus] paymentDate (parsed):', paymentDateStr);
+            console.warn('[useCheckMembershipStatus] paymentDate (UTC):', paymentDate.toISOString());
+            console.warn('[useCheckMembershipStatus] oneYearLater (UTC):', oneYearLater.toISOString());
+            console.warn('[useCheckMembershipStatus] now:', now.toISOString());
+            console.warn('[useCheckMembershipStatus] now >= paymentDate:', now >= paymentDate);
+            console.warn('[useCheckMembershipStatus] now <= oneYearLater:', now <= oneYearLater);
+            console.warn('[useCheckMembershipStatus] ✅ isActive:', isActive);
+          }
         } else if (user.lastMembership?.membershipPaymentDate && user.lastMembership?.billingDate) {
           const now = new Date();
           
-          const paymentDateStr = user.lastMembership.membershipPaymentDate.endsWith('Z') 
-            ? user.lastMembership.membershipPaymentDate 
-            : user.lastMembership.membershipPaymentDate + 'Z';
-          const billingDateStr = user.lastMembership.billingDate.endsWith('Z') 
-            ? user.lastMembership.billingDate 
-            : user.lastMembership.billingDate + 'Z';
+          let paymentDateStr = user.lastMembership.membershipPaymentDate;
+          let billingDateStr = user.lastMembership.billingDate;
+          
+          if (paymentDateStr.includes('+') && !paymentDateStr.endsWith('Z')) {
+            paymentDateStr = paymentDateStr.replace(/([+-]\d{2}:\d{2})$/, '.000Z');
+          } else if (!paymentDateStr.endsWith('Z')) {
+            paymentDateStr = paymentDateStr + '.000Z';
+          }
+          
+          if (billingDateStr.includes('+') && !billingDateStr.endsWith('Z')) {
+            billingDateStr = billingDateStr.replace(/([+-]\d{2}:\d{2})$/, '.000Z');
+          } else if (!billingDateStr.endsWith('Z')) {
+            billingDateStr = billingDateStr + '.000Z';
+          }
           
           const paymentDate = new Date(paymentDateStr);
           const billingDate = new Date(billingDateStr);
           
-          isActive = now >= paymentDate && now <= billingDate;
-          
-          console.warn('[useCheckMembershipStatus] ===== CÁLCULO DE isActive (MONTHLY/OTHER) =====');
-          console.warn('[useCheckMembershipStatus] membershipType:', membershipType);
-          console.warn('[useCheckMembershipStatus] paymentDate (original):', user.lastMembership.membershipPaymentDate);
-          console.warn('[useCheckMembershipStatus] paymentDate (UTC):', paymentDate.toISOString());
-          console.warn('[useCheckMembershipStatus] billingDate (original):', user.lastMembership.billingDate);
-          console.warn('[useCheckMembershipStatus] billingDate (UTC):', billingDate.toISOString());
-          console.warn('[useCheckMembershipStatus] now:', now.toISOString());
-          console.warn('[useCheckMembershipStatus] now >= paymentDate:', now >= paymentDate);
-          console.warn('[useCheckMembershipStatus] now <= billingDate:', now <= billingDate);
-          console.warn('[useCheckMembershipStatus] ✅ isActive:', isActive);
+          if (isNaN(paymentDate.getTime()) || isNaN(billingDate.getTime())) {
+            console.error('[useCheckMembershipStatus] ❌ Invalid dates - payment:', user.lastMembership.membershipPaymentDate, 'billing:', user.lastMembership.billingDate);
+            isActive = false;
+          } else {
+            isActive = now >= paymentDate && now <= billingDate;
+            
+            console.warn('[useCheckMembershipStatus] ===== CÁLCULO DE isActive (MONTHLY/OTHER) =====');
+            console.warn('[useCheckMembershipStatus] membershipType:', membershipType);
+            console.warn('[useCheckMembershipStatus] paymentDate (original):', user.lastMembership.membershipPaymentDate);
+            console.warn('[useCheckMembershipStatus] paymentDate (parsed):', paymentDateStr);
+            console.warn('[useCheckMembershipStatus] paymentDate (UTC):', paymentDate.toISOString());
+            console.warn('[useCheckMembershipStatus] billingDate (original):', user.lastMembership.billingDate);
+            console.warn('[useCheckMembershipStatus] billingDate (parsed):', billingDateStr);
+            console.warn('[useCheckMembershipStatus] billingDate (UTC):', billingDate.toISOString());
+            console.warn('[useCheckMembershipStatus] now:', now.toISOString());
+            console.warn('[useCheckMembershipStatus] now >= paymentDate:', now >= paymentDate);
+            console.warn('[useCheckMembershipStatus] now <= billingDate:', now <= billingDate);
+            console.warn('[useCheckMembershipStatus] ✅ isActive:', isActive);
+          }
         } else {
           console.warn('[useCheckMembershipStatus] ⚠️ Missing membership dates, membership is NOT active');
           console.warn('[useCheckMembershipStatus] membershipType:', membershipType);
