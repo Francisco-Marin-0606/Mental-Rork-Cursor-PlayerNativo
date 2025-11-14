@@ -412,13 +412,13 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
 
   return (
     <View style={styles.overlay} testID="manage-subscription-overlay">
+      <View style={styles.backgroundFill} />
       <Animated.View style={[styles.backdrop, { opacity }]} pointerEvents="none" />
       
       <Animated.View
         style={[
           styles.modalContainer,
           {
-            height: screenHeight,
             transform: [{ translateY }, { translateX }],
           },
         ]}
@@ -723,18 +723,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 3000,
   },
+  backgroundFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#170501',
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#000000',
   },
   modalContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#170501',
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
     overflow: 'hidden',
   },
   content: {
