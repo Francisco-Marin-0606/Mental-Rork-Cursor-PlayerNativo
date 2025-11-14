@@ -15,7 +15,8 @@ import {
 import { ChevronLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { useAppSettings, useCancelSubscription } from '@/lib/api-hooks';
+import { useAppSettings, useCancelSubscription, useCheckMembershipStatus } from '@/lib/api-hooks';
+import { useUserSession } from '@/providers/UserSession';
 
 interface ManageSubscriptionModalProps {
   visible: boolean;
@@ -26,13 +27,16 @@ interface ManageSubscriptionModalProps {
   billingDate?: string;
   userEmail?: string;
   userName?: string;
+  onSubscriptionChanged?: () => void;
 }
 
-export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '' }: ManageSubscriptionModalProps) {
+export default function ManageSubscriptionModal({ visible, onClose, isOnline = true, subscriptionStatus = 'active', subscriptionType, billingDate, userEmail = '', userName = '', onSubscriptionChanged }: ManageSubscriptionModalProps) {
   const { t } = useTranslation();
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+  const { userId } = useUserSession();
   
   const cancelSubscriptionMutation = useCancelSubscription();
+  const checkMembershipStatus = useCheckMembershipStatus();
   
   const { data: appSettingsData } = useAppSettings();
   const appSettings = appSettingsData?.[0];
@@ -278,6 +282,20 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
       });
       
       console.log('[ManageSubscription] ✅ Subscription cancelled successfully');
+      console.log('[ManageSubscription] 🔄 Refreshing membership status...');
+      
+      if (userId) {
+        try {
+          await checkMembershipStatus.mutateAsync(userId);
+          console.log('[ManageSubscription] ✅ Membership status refreshed');
+          
+          if (onSubscriptionChanged) {
+            onSubscriptionChanged();
+          }
+        } catch (refreshError: any) {
+          console.error('[ManageSubscription] ❌ Error refreshing membership status:', refreshError);
+        }
+      }
       
       Animated.parallel([
         Animated.timing(cancelConfirmTranslateX, {
@@ -318,7 +336,7 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
         setShowCancelConfirm(false);
       });
     }
-  }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut, cancelSubscriptionMutation, userEmail, userName]);
+  }, [cancelConfirmTranslateX, cancelConfirmOpacity, screenWidth, easeInOut, cancelSubscriptionMutation, userEmail, userName, userId, checkMembershipStatus, onSubscriptionChanged]);
 
   const handleCloseCancelConfirm = useCallback(async () => {
     if (Platform.OS !== 'web') {
@@ -582,6 +600,7 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
                   <Animated.View style={{ transform: [{ scale: yesCancelScale }], opacity: yesCancelOpacity, marginBottom: 12 }}>
                     <Pressable
                       style={styles.confirmButton}
+                      disabled={cancelSubscriptionMutation.isPending}
                       onPress={async () => {
                         if (Platform.OS !== 'web') {
                           try {
@@ -624,13 +643,16 @@ export default function ManageSubscriptionModal({ visible, onClose, isOnline = t
                       }}
                       android_ripple={Platform.OS === 'android' ? { color: 'transparent' } : undefined}
                     >
-                      <Text style={styles.confirmButtonText}>{t('manageSubscription.confirmCancel.confirmButton')}</Text>
+                      <Text style={styles.confirmButtonText}>
+                        {cancelSubscriptionMutation.isPending ? 'Cancelando...' : t('manageSubscription.confirmCancel.confirmButton')}
+                      </Text>
                     </Pressable>
                   </Animated.View>
 
                   <Animated.View style={{ transform: [{ scale: noContinueScale }], opacity: noContinueOpacity }}>
                     <Pressable
                       style={styles.confirmButtonSecondary}
+                      disabled={cancelSubscriptionMutation.isPending}
                       onPress={async () => {
                         if (Platform.OS !== 'web') {
                           try {
