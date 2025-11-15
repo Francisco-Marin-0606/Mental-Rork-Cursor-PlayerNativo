@@ -31,6 +31,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRevenueCatReady, setIsRevenueCatReady] = useState<boolean>(false);
   const enterButtonScale = useRef(new Animated.Value(1)).current;
   const enterButtonOpacity = useRef(new Animated.Value(1)).current;
   const createAccountButtonScale = useRef(new Animated.Value(1)).current;
@@ -251,6 +252,27 @@ export default function LoginScreen() {
   }, [auraData]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      setIsRevenueCatReady(false);
+      return;
+    }
+
+    const checkRevenueCat = async () => {
+      try {
+        console.log('[Login] Checking if RevenueCat is configured...');
+        const customerInfo = await Purchases.getCustomerInfo();
+        console.log('[Login] RevenueCat is ready!');
+        setIsRevenueCatReady(true);
+      } catch (error) {
+        console.log('[Login] RevenueCat not ready yet, will retry...');
+        setTimeout(checkRevenueCat, 100);
+      }
+    };
+
+    checkRevenueCat();
+  }, []);
+
+  useEffect(() => {
     const show = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
@@ -418,6 +440,12 @@ export default function LoginScreen() {
                     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
                   }
                   console.log('[Login] Create account pressed');
+                  console.log('[Login] RevenueCat ready status:', isRevenueCatReady);
+                  
+                  if (!isRevenueCatReady) {
+                    console.log('[Login] RevenueCat not ready yet, waiting...');
+                    return;
+                  }
                   
                   try {
                     console.log('[Login] Fetching offerings...');
