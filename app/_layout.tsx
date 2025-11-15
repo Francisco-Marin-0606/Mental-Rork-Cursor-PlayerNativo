@@ -9,7 +9,6 @@ import { StyleSheet, Platform, Linking, AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { UserSessionProvider, useUserSession } from "@/providers/UserSession";
 import { PlayerProvider } from "@/providers/PlayerProvider";
-import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
 import GlobalPlayerOverlay from "@/components/GlobalPlayerOverlay";
 import { AppVersionProvider, useAppVersionCheck } from "@/providers/AppVersionProvider";
 import UpdateRequiredModal from "@/components/UpdateRequiredModal";
@@ -253,11 +252,9 @@ function RootLayout() {
       <GestureHandlerRootView style={styles.flex} testID="gesture-root">
         <AppVersionProvider>
           <UserSessionProvider>
-            <RevenueCatProvider>
-              <PlayerProvider>
-                <AppContent />
-              </PlayerProvider>
-            </RevenueCatProvider>
+            <PlayerProvider>
+              <AppContent />
+            </PlayerProvider>
           </UserSessionProvider>
         </AppVersionProvider>
       </GestureHandlerRootView>
