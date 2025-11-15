@@ -15,6 +15,7 @@ import UpdateRequiredModal from "@/components/UpdateRequiredModal";
 import "../config/i18n";
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
 // Initialize Sentry
 Sentry.init({
@@ -220,6 +221,25 @@ function RootLayout() {
     };
 
     initializeApp();
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    try {
+      console.log('[RevenueCat] Initializing...');
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+      if (Platform.OS === 'ios') {
+        Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
+        console.log('[RevenueCat] Configured for iOS');
+      } else if (Platform.OS === 'android') {
+        Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
+        console.log('[RevenueCat] Configured for Android');
+      }
+    } catch (error) {
+      console.log('[RevenueCat] Initialization error:', error);
+    }
   }, []);
 
   // Fix para Android: Forzar recalculación de insets cuando la app regresa del background
