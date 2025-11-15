@@ -17,6 +17,24 @@ import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
+// Initialize RevenueCat immediately (before any components render)
+if (Platform.OS !== 'web') {
+  try {
+    console.log('[RevenueCat] Configuring SDK...');
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === 'ios') {
+      Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
+      console.log('[RevenueCat] Configured for iOS');
+    } else if (Platform.OS === 'android') {
+      Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
+      console.log('[RevenueCat] Configured for Android');
+    }
+  } catch (error) {
+    console.log('[RevenueCat] Configuration error:', error);
+  }
+}
+
 // Initialize Sentry
 Sentry.init({
   dsn: 'https://d72aecc42dbdee91e8bccff7a748edf2@o4508667613151232.ingest.us.sentry.io/4510324338130944',
@@ -221,25 +239,6 @@ function RootLayout() {
     };
 
     initializeApp();
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-
-    try {
-      console.log('[RevenueCat] Initializing...');
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-
-      if (Platform.OS === 'ios') {
-        Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
-        console.log('[RevenueCat] Configured for iOS');
-      } else if (Platform.OS === 'android') {
-        Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
-        console.log('[RevenueCat] Configured for Android');
-      }
-    } catch (error) {
-      console.log('[RevenueCat] Initialization error:', error);
-    }
   }, []);
 
   // Fix para Android: Forzar recalculación de insets cuando la app regresa del background
