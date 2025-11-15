@@ -25,6 +25,7 @@ import { useRequestLoginCode, useAppSettings, useAuraHertz } from '@/lib/api-hoo
 import Constants from 'expo-constants';
 import { apiClient } from '@/lib/api-client';
 import { Image as ExpoImage } from 'expo-image';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState<string>('');
@@ -412,11 +413,35 @@ export default function LoginScreen() {
           {showCreateAccount ? (
             <View style={styles.createAccountSection} testID="create-account-section">
               <Pressable
-                onPress={() => {
+                onPress={async () => {
                   if (Platform.OS !== 'web') {
                     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
                   }
-                  console.log('Create account pressed');
+                  console.log('[Login] Create account pressed - presenting paywall');
+                  
+                  try {
+                    const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
+                      offering: { identifier: 'ofrng328a4a1622' } as any
+                    });
+                    
+                    console.log('[Login] Paywall result:', paywallResult);
+                    
+                    switch (paywallResult) {
+                      case PAYWALL_RESULT.PURCHASED:
+                      case PAYWALL_RESULT.RESTORED:
+                        console.log('[Login] Purchase/restore successful');
+                        break;
+                      case PAYWALL_RESULT.CANCELLED:
+                        console.log('[Login] User cancelled paywall');
+                        break;
+                      case PAYWALL_RESULT.NOT_PRESENTED:
+                      case PAYWALL_RESULT.ERROR:
+                        console.log('[Login] Paywall error or not presented');
+                        break;
+                    }
+                  } catch (error) {
+                    console.log('[Login] Error presenting paywall:', error);
+                  }
                 }}
                 testID="create-account-link"
                 android_ripple={{ color: 'rgba(255,138,0,0.15)' }}
