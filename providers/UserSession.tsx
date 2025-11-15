@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
+import { Platform } from 'react-native';
+import Purchases from 'react-native-purchases';
 
 export interface UserSessionData {
   userId: string;
@@ -80,6 +82,18 @@ export const [UserSessionProvider, useUserSession] = createContextHook<UserSessi
           console.log('[UserSession] Clear cache error', e);
         }
       })();
+
+      if (Platform.OS !== 'web' && data.userId) {
+        (async () => {
+          try {
+            console.log('[UserSession] Identifying user in RevenueCat:', data.userId);
+            await Purchases.logIn(data.userId);
+            console.log('[UserSession] User identified in RevenueCat');
+          } catch (error) {
+            console.log('[UserSession] RevenueCat login error:', error);
+          }
+        })();
+      }
     } catch (e) {
       console.log('[UserSession] setSession error', e);
     }

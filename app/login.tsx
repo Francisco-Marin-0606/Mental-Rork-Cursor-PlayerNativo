@@ -25,7 +25,7 @@ import { useRequestLoginCode, useAppSettings, useAuraHertz } from '@/lib/api-hoo
 import Constants from 'expo-constants';
 import { apiClient } from '@/lib/api-client';
 import { Image as ExpoImage } from 'expo-image';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import Purchases from 'react-native-purchases';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState<string>('');
@@ -417,30 +417,51 @@ export default function LoginScreen() {
                   if (Platform.OS !== 'web') {
                     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
                   }
-                  console.log('[Login] Create account pressed - presenting paywall');
+                  console.log('[Login] Create account pressed');
                   
                   try {
-                    const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
-                      offering: { identifier: 'ofrng328a4a1622' } as any
-                    });
+                    console.log('[Login] Fetching offerings...');
+                    const offerings = await Purchases.getOfferings();
+                    console.log('[Login] Available offerings:', JSON.stringify(offerings, null, 2));
                     
-                    console.log('[Login] Paywall result:', paywallResult);
-                    
-                    switch (paywallResult) {
-                      case PAYWALL_RESULT.PURCHASED:
-                      case PAYWALL_RESULT.RESTORED:
-                        console.log('[Login] Purchase/restore successful');
-                        break;
-                      case PAYWALL_RESULT.CANCELLED:
-                        console.log('[Login] User cancelled paywall');
-                        break;
-                      case PAYWALL_RESULT.NOT_PRESENTED:
-                      case PAYWALL_RESULT.ERROR:
-                        console.log('[Login] Paywall error or not presented');
-                        break;
+                    if (!offerings.current) {
+                      console.log('[Login] No current offering available');
+                      return;
                     }
-                  } catch (error) {
-                    console.log('[Login] Error presenting paywall:', error);
+                    
+                    const availablePackages = offerings.current.availablePackages;
+                    console.log('[Login] Available packages:', availablePackages.length);
+                    
+                    if (availablePackages.length > 0) {
+                      const packageToPurchase = availablePackages[0];
+                      console.log('[Login] Attempting purchase of package:', packageToPurchase.identifier);
+                      
+                      const purchaseResult = await Purchases.purchasePackage(packageToPurchase);
+                      console.log('[Login] Purchase result:', JSON.stringify(purchaseResult, null, 2));
+                      
+                      const customerInfo = purchaseResult.customerInfo;
+                      const hasProEntitlement = typeof customerInfo.entitlements.active['pro'] !== 'undefined';
+                      console.log('[Login] Has pro entitlement:', hasProEntitlement);
+                      
+                      if (hasProEntitlement) {
+                        console.log('[Login] Purchase successful! Navigating to form...');
+                        router.replace('/form');
+                      } else {
+                        console.log('[Login] Purchase completed but no entitlement found');
+                      }
+                    } else {
+                      console.log('[Login] No packages available in offering');
+                    }
+                  } catch (error: any) {
+                    console.log('[Login] Purchase error:', error);
+                    console.log('[Login] Error code:', error?.code);
+                    console.log('[Login] Error message:', error?.message);
+                    
+                    if (error?.code === 'PURCHASE_CANCELLED_ERROR' || error?.userCancelled) {
+                      console.log('[Login] User cancelled the purchase');
+                    } else {
+                      console.log('[Login] Purchase failed with error:', error);
+                    }
                   }
                 }}
                 testID="create-account-link"
