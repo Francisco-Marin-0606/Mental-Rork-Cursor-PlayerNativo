@@ -18,22 +18,31 @@ import Constants from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
 // Initialize RevenueCat immediately (before any components render)
+let isRevenueCatConfigured = false;
 if (Platform.OS !== 'web') {
   try {
-    console.log('[RevenueCat] Configuring SDK...');
+    console.log('[RevenueCat] Starting configuration...');
+    console.log('[RevenueCat] Platform:', Platform.OS);
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
     if (Platform.OS === 'ios') {
       Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
-      console.log('[RevenueCat] Configured for iOS');
+      console.log('[RevenueCat] Successfully configured for iOS');
+      isRevenueCatConfigured = true;
     } else if (Platform.OS === 'android') {
       Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
-      console.log('[RevenueCat] Configured for Android');
+      console.log('[RevenueCat] Successfully configured for Android');
+      isRevenueCatConfigured = true;
     }
-  } catch (error) {
-    console.log('[RevenueCat] Configuration error:', error);
+    
+    console.log('[RevenueCat] Configuration complete, isConfigured:', isRevenueCatConfigured);
+  } catch (error: any) {
+    console.error('[RevenueCat] Configuration error:', error);
+    console.error('[RevenueCat] Error details:', JSON.stringify(error, null, 2));
   }
 }
+
+export { isRevenueCatConfigured };
 
 // Initialize Sentry
 Sentry.init({

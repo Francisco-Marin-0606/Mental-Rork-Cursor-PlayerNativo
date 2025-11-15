@@ -26,6 +26,7 @@ import Constants from 'expo-constants';
 import { apiClient } from '@/lib/api-client';
 import { Image as ExpoImage } from 'expo-image';
 import Purchases from 'react-native-purchases';
+import { isRevenueCatConfigured } from './_layout';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState<string>('');
@@ -253,19 +254,36 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (Platform.OS === 'web') {
+      console.log('[Login] Web platform detected, RevenueCat not available');
       setIsRevenueCatReady(false);
       return;
     }
 
+    if (!isRevenueCatConfigured) {
+      console.error('[Login] RevenueCat was not configured at app startup!');
+      setIsRevenueCatReady(false);
+      return;
+    }
+
+    let retryCount = 0;
+    const maxRetries = 20;
+
     const checkRevenueCat = async () => {
       try {
-        console.log('[Login] Checking if RevenueCat is configured...');
+        console.log(`[Login] Checking RevenueCat readiness (attempt ${retryCount + 1}/${maxRetries})...`);
         const customerInfo = await Purchases.getCustomerInfo();
-        console.log('[Login] RevenueCat is ready!');
+        console.log('[Login] RevenueCat is ready! Customer info:', customerInfo.originalAppUserId);
         setIsRevenueCatReady(true);
-      } catch (error) {
-        console.log('[Login] RevenueCat not ready yet, will retry...');
-        setTimeout(checkRevenueCat, 100);
+      } catch (error: any) {
+        retryCount++;
+        console.log(`[Login] RevenueCat check failed (${retryCount}/${maxRetries}):`, error?.message || error);
+        
+        if (retryCount < maxRetries) {
+          setTimeout(checkRevenueCat, 200);
+        } else {
+          console.error('[Login] RevenueCat failed to initialize after max retries');
+          setIsRevenueCatReady(false);
+        }
       }
     };
 
