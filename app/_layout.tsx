@@ -17,54 +17,23 @@ import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
-let isRevenueCatInitialized = false;
-let revenueCatInitPromise: Promise<boolean> | null = null;
-
-function initializeRevenueCat(): Promise<boolean> {
-  if (revenueCatInitPromise) {
-    return revenueCatInitPromise;
-  }
-
-  if (Platform.OS === 'web') {
-    revenueCatInitPromise = Promise.resolve(false);
-    return revenueCatInitPromise;
-  }
-
-  revenueCatInitPromise = (async () => {
-    try {
-      console.log('[RevenueCat] Starting initialization...');
-      console.log('[RevenueCat] Platform:', Platform.OS);
-      
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-
-      if (Platform.OS === 'ios') {
-        Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
-        console.log('[RevenueCat] Configure called for iOS');
-      } else if (Platform.OS === 'android') {
-        Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
-        console.log('[RevenueCat] Configure called for Android');
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const customerInfo = await Purchases.getCustomerInfo();
-      console.log('[RevenueCat] Successfully initialized! Customer ID:', customerInfo.originalAppUserId);
-      isRevenueCatInitialized = true;
-      return true;
-    } catch (error: any) {
-      console.error('[RevenueCat] Initialization failed:', error?.message || error);
-      return false;
-    }
-  })();
-
-  return revenueCatInitPromise;
-}
-
+// Initialize RevenueCat immediately (before any components render)
 if (Platform.OS !== 'web') {
-  initializeRevenueCat();
-}
+  try {
+    console.log('[RevenueCat] Configuring SDK...');
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
-export { isRevenueCatInitialized, initializeRevenueCat };
+    if (Platform.OS === 'ios') {
+      Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
+      console.log('[RevenueCat] Configured for iOS');
+    } else if (Platform.OS === 'android') {
+      Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
+      console.log('[RevenueCat] Configured for Android');
+    }
+  } catch (error) {
+    console.log('[RevenueCat] Configuration error:', error);
+  }
+}
 
 // Initialize Sentry
 Sentry.init({

@@ -26,7 +26,6 @@ import Constants from 'expo-constants';
 import { apiClient } from '@/lib/api-client';
 import { Image as ExpoImage } from 'expo-image';
 import Purchases from 'react-native-purchases';
-import { initializeRevenueCat } from './_layout';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState<string>('');
@@ -254,30 +253,23 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      console.log('[Login] Web platform detected, RevenueCat not available');
       setIsRevenueCatReady(false);
       return;
     }
 
-    const initRevenueCat = async () => {
+    const checkRevenueCat = async () => {
       try {
-        console.log('[Login] Waiting for RevenueCat initialization...');
-        const success = await initializeRevenueCat();
-        
-        if (success) {
-          console.log('[Login] RevenueCat is ready!');
-          setIsRevenueCatReady(true);
-        } else {
-          console.error('[Login] RevenueCat initialization failed');
-          setIsRevenueCatReady(false);
-        }
-      } catch (error: any) {
-        console.error('[Login] Error initializing RevenueCat:', error?.message || error);
-        setIsRevenueCatReady(false);
+        console.log('[Login] Checking if RevenueCat is configured...');
+        const customerInfo = await Purchases.getCustomerInfo();
+        console.log('[Login] RevenueCat is ready!');
+        setIsRevenueCatReady(true);
+      } catch (error) {
+        console.log('[Login] RevenueCat not ready yet, will retry...');
+        setTimeout(checkRevenueCat, 100);
       }
     };
 
-    initRevenueCat();
+    checkRevenueCat();
   }, []);
 
   useEffect(() => {
