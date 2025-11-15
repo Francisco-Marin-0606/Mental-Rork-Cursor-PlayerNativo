@@ -17,32 +17,54 @@ import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
-// Initialize RevenueCat immediately (before any components render)
-let isRevenueCatConfigured = false;
-if (Platform.OS !== 'web') {
-  try {
-    console.log('[RevenueCat] Starting configuration...');
-    console.log('[RevenueCat] Platform:', Platform.OS);
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+let isRevenueCatInitialized = false;
+let revenueCatInitPromise: Promise<boolean> | null = null;
 
-    if (Platform.OS === 'ios') {
-      Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
-      console.log('[RevenueCat] Successfully configured for iOS');
-      isRevenueCatConfigured = true;
-    } else if (Platform.OS === 'android') {
-      Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
-      console.log('[RevenueCat] Successfully configured for Android');
-      isRevenueCatConfigured = true;
-    }
-    
-    console.log('[RevenueCat] Configuration complete, isConfigured:', isRevenueCatConfigured);
-  } catch (error: any) {
-    console.error('[RevenueCat] Configuration error:', error);
-    console.error('[RevenueCat] Error details:', JSON.stringify(error, null, 2));
+function initializeRevenueCat(): Promise<boolean> {
+  if (revenueCatInitPromise) {
+    return revenueCatInitPromise;
   }
+
+  if (Platform.OS === 'web') {
+    revenueCatInitPromise = Promise.resolve(false);
+    return revenueCatInitPromise;
+  }
+
+  revenueCatInitPromise = (async () => {
+    try {
+      console.log('[RevenueCat] Starting initialization...');
+      console.log('[RevenueCat] Platform:', Platform.OS);
+      
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+      if (Platform.OS === 'ios') {
+        Purchases.configure({ apiKey: 'appl_JIgqffPngTJdriVoNIdXjDxZisc' });
+        console.log('[RevenueCat] Configure called for iOS');
+      } else if (Platform.OS === 'android') {
+        Purchases.configure({ apiKey: 'goog_NxdUftDeAYMdsAdqhvDiiNOZnKi' });
+        console.log('[RevenueCat] Configure called for Android');
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const customerInfo = await Purchases.getCustomerInfo();
+      console.log('[RevenueCat] Successfully initialized! Customer ID:', customerInfo.originalAppUserId);
+      isRevenueCatInitialized = true;
+      return true;
+    } catch (error: any) {
+      console.error('[RevenueCat] Initialization failed:', error?.message || error);
+      return false;
+    }
+  })();
+
+  return revenueCatInitPromise;
 }
 
-export { isRevenueCatConfigured };
+if (Platform.OS !== 'web') {
+  initializeRevenueCat();
+}
+
+export { isRevenueCatInitialized, initializeRevenueCat };
 
 // Initialize Sentry
 Sentry.init({

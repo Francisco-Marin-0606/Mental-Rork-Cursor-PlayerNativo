@@ -26,7 +26,7 @@ import Constants from 'expo-constants';
 import { apiClient } from '@/lib/api-client';
 import { Image as ExpoImage } from 'expo-image';
 import Purchases from 'react-native-purchases';
-import { isRevenueCatConfigured } from './_layout';
+import { initializeRevenueCat } from './_layout';
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState<string>('');
@@ -259,35 +259,25 @@ export default function LoginScreen() {
       return;
     }
 
-    if (!isRevenueCatConfigured) {
-      console.error('[Login] RevenueCat was not configured at app startup!');
-      setIsRevenueCatReady(false);
-      return;
-    }
-
-    let retryCount = 0;
-    const maxRetries = 20;
-
-    const checkRevenueCat = async () => {
+    const initRevenueCat = async () => {
       try {
-        console.log(`[Login] Checking RevenueCat readiness (attempt ${retryCount + 1}/${maxRetries})...`);
-        const customerInfo = await Purchases.getCustomerInfo();
-        console.log('[Login] RevenueCat is ready! Customer info:', customerInfo.originalAppUserId);
-        setIsRevenueCatReady(true);
-      } catch (error: any) {
-        retryCount++;
-        console.log(`[Login] RevenueCat check failed (${retryCount}/${maxRetries}):`, error?.message || error);
+        console.log('[Login] Waiting for RevenueCat initialization...');
+        const success = await initializeRevenueCat();
         
-        if (retryCount < maxRetries) {
-          setTimeout(checkRevenueCat, 200);
+        if (success) {
+          console.log('[Login] RevenueCat is ready!');
+          setIsRevenueCatReady(true);
         } else {
-          console.error('[Login] RevenueCat failed to initialize after max retries');
+          console.error('[Login] RevenueCat initialization failed');
           setIsRevenueCatReady(false);
         }
+      } catch (error: any) {
+        console.error('[Login] Error initializing RevenueCat:', error?.message || error);
+        setIsRevenueCatReady(false);
       }
     };
 
-    checkRevenueCat();
+    initRevenueCat();
   }, []);
 
   useEffect(() => {
