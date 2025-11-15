@@ -440,8 +440,8 @@ export default function LoginScreen() {
                       console.log('[Login] Purchase result:', JSON.stringify(purchaseResult, null, 2));
                       
                       const customerInfo = purchaseResult.customerInfo;
-                      const hasProEntitlement = typeof customerInfo.entitlements.active['pro'] !== 'undefined';
-                      console.log('[Login] Has pro entitlement:', hasProEntitlement);
+                      const hasProEntitlement = typeof customerInfo.entitlements.active['Mental'] !== 'undefined';
+                      console.log('[Login] Has Mental entitlement:', hasProEntitlement);
                       
                       if (hasProEntitlement) {
                         console.log('[Login] Purchase successful! Navigating to form...');

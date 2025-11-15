@@ -40,8 +40,8 @@ export function useRevenueCatSubscription() {
     };
   }, []);
 
-  const hasProEntitlement = customerInfo?.entitlements.active['pro'] !== undefined;
-  const isProActive = hasProEntitlement && customerInfo?.entitlements.active['pro']?.isActive === true;
+  const hasProEntitlement = customerInfo?.entitlements.active['Mental'] !== undefined;
+  const isProActive = hasProEntitlement && customerInfo?.entitlements.active['Mental']?.isActive === true;
 
   return {
     customerInfo,
@@ -62,8 +62,8 @@ export async function checkSubscriptionStatus(): Promise<boolean> {
   try {
     console.log('[RevenueCat] Checking subscription status...');
     const customerInfo = await Purchases.getCustomerInfo();
-    const hasProEntitlement = typeof customerInfo.entitlements.active['pro'] !== 'undefined';
-    const isActive = hasProEntitlement && customerInfo.entitlements.active['pro']?.isActive === true;
+    const hasProEntitlement = typeof customerInfo.entitlements.active['Mental'] !== 'undefined';
+    const isActive = hasProEntitlement && customerInfo.entitlements.active['Mental']?.isActive === true;
     console.log('[RevenueCat] Subscription status:', { hasProEntitlement, isActive });
     return isActive;
   } catch (error) {
@@ -83,8 +83,8 @@ export async function restorePurchases(): Promise<{ success: boolean; hasActiveS
     const customerInfo = await Purchases.restorePurchases();
     console.log('[RevenueCat] Restore result:', JSON.stringify(customerInfo, null, 2));
     
-    const hasProEntitlement = typeof customerInfo.entitlements.active['pro'] !== 'undefined';
-    const isActive = hasProEntitlement && customerInfo.entitlements.active['pro']?.isActive === true;
+    const hasProEntitlement = typeof customerInfo.entitlements.active['Mental'] !== 'undefined';
+    const isActive = hasProEntitlement && customerInfo.entitlements.active['Mental']?.isActive === true;
     
     console.log('[RevenueCat] Restore completed:', { hasProEntitlement, isActive });
     return { success: true, hasActiveSubscription: isActive };
